@@ -1,8 +1,23 @@
 #include <QCoreApplication>
 #include <cstdio>
 #include <iostream>
+#include "boost/filesystem.hpp"
+
 #include "errorcodes.h"
-#include "macros.h"
+
+/****************** nkhStart: macro utils ******************/
+#define errStr(x) #x
+
+#define checkPath(p) if(!exists(p)){\
+    cerr << p << " : " << errStr(NO_SUCH_FILE_OR_DIR\n);\
+    return NO_SUCH_FILE_OR_DIR;}
+
+
+/****************** nkhEnd: macro utils ******************/
+
+
+using namespace std;
+using namespace boost::filesystem;
 
 int main(int argc, char *argv[])
 {
@@ -10,12 +25,15 @@ int main(int argc, char *argv[])
 
     if (argc == 3)
     {
-        printf("Goood\n");
+        path inputDir(argv[1]), outDir(argv[2]);
+        checkPath(inputDir);
+        checkPath(outDir);
+
         return NORMAL_STATE;
     }
     else
     {
-        std::cerr << errStr(error: INSUFFICIENT_ARGUMENTS\n);
+        cerr << errStr(error: INSUFFICIENT_ARGUMENTS\n);
         return INSUFFICIENT_ARGUMENTS;
     }
     //return a.exec();

@@ -1,4 +1,5 @@
 build-processDir-Desktop-Debug
 build-processDir-Desktop-Release
 ./processDir/processDir.pro.user
+test/
 *~
