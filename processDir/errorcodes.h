@@ -1,0 +1,8 @@
+#ifndef ERRORCODES
+#define ERRORCODES
+
+#define NORMAL_STATE 0
+#define INSUFFICIENT_ARGUMENTS 1
+
+#endif // ERRORCODES
+
