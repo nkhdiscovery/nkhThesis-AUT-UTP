@@ -10,8 +10,11 @@
 
 #define checkPath(p) if(!exists(p)){\
     cerr << p << " : " << errStr(NO_SUCH_FILE_OR_DIR\n);\
-    return NO_SUCH_FILE_OR_DIR;}
-
+    return NO_SUCH_FILE_OR_DIR; }
+#define checkDir(p) checkPath(p);\
+    if(!is_directory(p)){\
+    cerr << p << " : " << errStr(NOT_A_DIR\n);\
+    return NOT_A_DIR; }
 
 /****************** nkhEnd: macro utils ******************/
 
@@ -25,9 +28,10 @@ int main(int argc, char *argv[])
 
     if (argc == 3)
     {
-        path inputDir(argv[1]), outDir(argv[2]);
-        checkPath(inputDir);
-        checkPath(outDir);
+        path inDir(argv[1]), outDir(argv[2]);
+        checkDir(inDir);
+        checkDir(outDir);
+
 
         return NORMAL_STATE;
     }
