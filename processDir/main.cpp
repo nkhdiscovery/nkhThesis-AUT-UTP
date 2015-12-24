@@ -31,8 +31,11 @@ int main(int argc, char *argv[])
         path inDir(argv[1]), outDir(argv[2]);
         checkDir(inDir);
         checkDir(outDir);
+        directory_iterator endIter;
+        for (directory_iterator iter(inDir); iter != endIter; ++iter)
+        {
 
-
+        }
         return NORMAL_STATE;
     }
     else
