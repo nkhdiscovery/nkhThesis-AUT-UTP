@@ -34,7 +34,10 @@ int main(int argc, char *argv[])
         directory_iterator endIter;
         for (directory_iterator iter(inDir); iter != endIter; ++iter)
         {
-
+            if (is_regular_file(iter->path()))
+            {
+                printf("%s\n", iter->path().c_str());
+            }
         }
         return NORMAL_STATE;
     }
