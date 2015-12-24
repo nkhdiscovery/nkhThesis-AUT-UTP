@@ -1,0 +1,6 @@
+Challange: H
+Weather: N
+Clutter: Y
+
+Shapes:
+Side_1: Shape(Q),Frame(NR,HR,MR),Color(W),Pos(T),Inside(T,S),Occl(N),Light(N)

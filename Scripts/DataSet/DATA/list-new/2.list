@@ -1,0 +1,8 @@
+Challange: NH
+Weather: ND
+Clutter: YN
+
+Shapes:
+: Shape(QP),Frame(NR,HR,MR,BP,TP,AP),Color(),Pos(TS),Inside(T,S,TS),Occl(YN),Light(NHL)
+: Shape(QP),Frame(NR,HR,MR,BP,TP,AP),Color(),Pos(TS),Inside(T,S,TS),Occl(YN),Light(NHL)
+: Shape(QP),Frame(NR,HR,MR,BP,TP,AP),Color(),Pos(TS),Inside(T,S,TS),Occl(YN),Light(NHL)

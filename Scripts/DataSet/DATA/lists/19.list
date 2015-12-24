@@ -1,0 +1,17 @@
+Challange: H
+Weather: N
+Clutter: N
+
+Shapes:
+Above_1: Shape(Q),Frame(NR,MR),Color(GBW),Pos(T),Inside(T,S),Occl(N),Light(N)
+NONE: Shape(Q),Frame(HR),Color(G),Pos(T),Inside(T),Occl(N),Light(N)
+Above_2: Shape(Q),Frame(NR),Color(G),Pos(T),Inside(T,S),Occl(N),Light(N)
+Above_3: Shape(Q),Frame(NR,MR),Color(G),Pos(T),Inside(T,S),Occl(N),Light(N)
+Above_4: Shape(Q),Frame(NR),Color(G),Pos(T),Inside(T,S),Occl(N),Light(N)
+Above_5: Shape(Q),Frame(NR,MR),Color(WG),Pos(T),Inside(T,S),Occl(N),Light(H)
+Above_6: Shape(Q),Frame(NR),Color(WB),Pos(T),Inside(T,S),Occl(N),Light(H)
+Above_7: Shape(Q),Frame(NR),Color(GW),Pos(T),Inside(T,S),Occl(N),Light(N)
+NONE: Shape(Q),Frame(VR,MR),Color(G),Pos(S),Inside(T,S),Occl(N),Light(L)
+Above_8: Shape(Q),Frame(NR),Color(GWB),Pos(T),Inside(T,S),Occl(N),Light(N)
+NONE: Shape(Q),Frame(HR),Color(G),Pos(T),Inside(T),Occl(N),Light(N)
+Above_9: Shape(Q),Frame(HR),Color(G),Pos(T),Inside(T,TS),Occl(N),Light(N)

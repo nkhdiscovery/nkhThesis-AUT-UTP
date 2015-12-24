@@ -1,0 +1,7 @@
+Challange: H
+Weather: N
+Clutter: Y
+
+Shapes:
+Side_1: Shape(P),Frame(BP),Color(WO),Pos(S),Inside(T,S),Occl(N),Light(H)
+Side_2: Shape(P),Frame(BP),Color(WB),Pos(S),Inside(T,S),Occl(N),Light(H)
