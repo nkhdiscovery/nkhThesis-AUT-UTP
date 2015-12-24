@@ -104,8 +104,8 @@ int main(int argc, char *argv[])
 
 void nkhMain(path inDir, path outDir, vector<path> frames)
 {
-    nkhTest();
-    return;
+    //nkhTest();
+    //return;
 
 
     initFPSTimer();
