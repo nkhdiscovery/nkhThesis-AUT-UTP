@@ -6,7 +6,6 @@
 #include <opencv2/cudawarping.hpp>
 using namespace cv;
 
-#include "errorcodes.h"
 #include "nkhUtil.h"
 
 /****************** nkhStart: global vars ******************/
@@ -63,9 +62,6 @@ int main(int argc, char *argv[])
         path inDir(argv[1]), outDir(argv[2]);
         checkDir(inDir);
         checkDir(outDir);
-
-        vector<path> inpVec;
-
         //TODO: handle non-regular files in dir, further handle non-images! I considered the inDir contains nothing than the frames.
         copy(directory_iterator(inDir), directory_iterator(), back_inserter(inpVec));
         sort(inpVec.begin(), inpVec.end());
@@ -84,56 +80,9 @@ int main(int argc, char *argv[])
 
 void nkhMain(path inDir, path outDir, vector<path> frames)
 {
-    //    nkhTest();
+
+    nkhTest();
     return;
-
-
-    initFPSTimer();
-    int fpsSum = 0, counter = 0 ;
-
-
-    for (vector<path>::const_iterator it(frames.begin()), it_end(frames.end()); it != it_end; ++it)
-    {
-        fpsCalcStart();
-        cv::Mat src = cv::imread(it->string(), cv::IMREAD_GRAYSCALE);
-        cv::Mat dst;
-        //resize(src, dst, Size(src.size().width/2.0, src.size().height/2.0));
-        //cv::threshold(src, dst, 128.0, 255.0, cv::THRESH_BINARY);
-        //cv::imshow("Result", dst);
-
-        /*
-        cv::Mat src_host = cv::imread(it->string(), cv::IMREAD_GRAYSCALE), dst_host;
-        cv::cuda::GpuMat dst, src;
-        src.upload(src_host);
-        cv::cuda::resize(src, dst, Size(640,480));
-        cv::cuda::threshold(dst, src, 128.0, 255.0, cv::THRESH_BINARY);
-        cv::Mat result_host(src);
-        //cv::imshow("Result", result_host);
-        */
-
-        /*
-        Mat img = imread(it->string());
-        GpuMat gpuImg ;
-        gpuImg.upload(img);
-
-        Mat dst = img.clone();
-        gpuImg.download(dst);
-        fpsCalcStart();
-        imshow("Files", dst);
-        */
-        if (cvWaitKey(1) == 'q' )
-            break;
-
-        fpsCalcEnd();
-        if(timerFPS !=INFINITY )
-        {
-            fpsSum += timerFPS;
-            //cout << counter << " " << timerFPS << endl ;
-        }
-        counter++;
-    }
-    cout << (double) fpsSum/counter << endl;
-
 }
 
 void nkhTest()
@@ -173,7 +122,7 @@ void nkhTest()
         }
 
 
-        resize(src,src, cvSize(src.size().width/2,src.size().height/2));
+//        resize(src,src, cvSize(src.size().width/2,src.size().height/2));
         cvtColor(src, imgHSV, COLOR_BGR2HSV);
 
         inRange(imgHSV, Scalar(iLowH, iLowS, iLowV), Scalar(iHighH, iHighS, iHighV), dst); //Threshold the image
@@ -213,7 +162,7 @@ void nkhTest()
         Mat showContours = Mat::zeros( edges.size(), CV_8UC3 );
 
         /// TIME BOTTLENECK : Extra?
-        resize(src,showContours,cvSize(src.size().width/2.0,src.size().height/2.0));
+//        resize(src,showContours,cvSize(src.size().width/2.0,src.size().height/2.0));
 
 
         RNG rng(12345);
@@ -263,7 +212,7 @@ void nkhTest()
         //        }
         //        imshow("Contoures",showContours);
         // TIME CONSUMING
-       // imshow("Thresh",dst);
+        // imshow("Thresh",dst);
 
         fpsCalcEnd();
         if(timerFPS !=INFINITY )

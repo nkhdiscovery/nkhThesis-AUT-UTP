@@ -14,6 +14,17 @@ using namespace boost::filesystem;
 #include <algorithm>
 using namespace std;
 
+
+enum{
+NORMAL_STATE,
+INSUFFICIENT_ARGUMENTS,
+NO_SUCH_FILE_OR_DIR,
+NOT_A_DIR,
+NOT_REGULAR_FILE,
+
+};
+
+
 /****************** nkhStart: macro utils ******************/
 #define getStr(x) #x
 
@@ -24,6 +35,10 @@ using namespace std;
     if(!is_directory(p)){\
     cerr << p << " : " << getStr(NOT_A_DIR\n);\
     return NOT_A_DIR; }
+#define checkRegularFile(p) checkPath(p);\
+    if(!is_regular_file(p)){\
+    cerr << p << " : " << getStr(NOT_REGULAR_FILE\n);\
+    return NOT_REGULAR_FILE; }
 /****************** nkhEnd: macro utils ******************/
 
 /************************* nkhStart: timer template *************************

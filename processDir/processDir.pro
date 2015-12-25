@@ -25,6 +25,5 @@ TEMPLATE = app
 SOURCES += main.cpp
 
 HEADERS += \
-    errorcodes.h \
     nkhUtil.h
 
