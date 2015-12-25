@@ -14,19 +14,7 @@ using namespace boost::filesystem;
 #include <algorithm>
 using namespace std;
 
-
-
-template<typename T> string time_type()                  { return "unknown";      }
-template<> string time_type<std::chrono::nanoseconds >() { return "nanoseconds";  }
-template<> string time_type<std::chrono::microseconds>() { return "microseconds"; }
-template<> string time_type<std::chrono::milliseconds>() { return "milliseconds"; }
-template<> string time_type<std::chrono::seconds     >() { return "seconds";      }
-template<> string time_type<std::chrono::minutes     >() { return "minutes";      }
-template<> string time_type<std::chrono::hours       >() { return "hours";        }
-
-
 /****************** nkhStart: macro utils ******************/
-
 #define getStr(x) #x
 
 #define checkPath(p) if(!exists(p)){\
@@ -38,6 +26,19 @@ template<> string time_type<std::chrono::hours       >() { return "hours";      
     return NOT_A_DIR; }
 /****************** nkhEnd: macro utils ******************/
 
+/************************* nkhStart: timer template *************************
+ * Usage:
+ * cout << measure<std::chrono::milliseconds>(functionName, args...) << endl;
+ * also can be used for void functions like
+ * measure<std::chrono::nanoseconds>(someVoidFunc, args...);
+ ****************************************************************************/
+template<typename T> string time_type()                  { return "unknown";      }
+template<> string time_type<std::chrono::nanoseconds >() { return "nanoseconds";  }
+template<> string time_type<std::chrono::microseconds>() { return "microseconds"; }
+template<> string time_type<std::chrono::milliseconds>() { return "milliseconds"; }
+template<> string time_type<std::chrono::seconds     >() { return "seconds";      }
+template<> string time_type<std::chrono::minutes     >() { return "minutes";      }
+template<> string time_type<std::chrono::hours       >() { return "hours";        }
 template <typename TimeT, typename Functor, typename ... Args>
 auto measure(Functor f, Args && ... args)
     -> decltype(f(std::forward<Args>(args)...))
@@ -57,5 +58,6 @@ auto measure(Functor f, Args && ... args)
 
     return f(std::forward<Args>(args)...);
 }
+/************************* nkhEnd: timer template *************************/
 
 #endif // NKHUTIL_H

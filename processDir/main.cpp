@@ -10,13 +10,17 @@ using namespace cv;
 #include "nkhUtil.h"
 
 /****************** nkhStart: global vars ******************/
+
+/****************** nkhEnd: global vars ******************/
+
+void nkhMain(path inDir, path outDir, vector<path> frames);
+
+/************************* nkhStart: FPS counter *************************/
+//TODO: implement as a template
 time_t timerStart, timerEnd;
 int timerCounter = 0;
 double timerSec;
 double timerFPS;
-/****************** nkhEnd: global vars ******************/
-
-void nkhMain(path inDir, path outDir, vector<path> frames);
 void initFPSTimer(){
     timerCounter = 0;
 }
@@ -40,16 +44,9 @@ string fpsCalcEnd()
         timerCounter = 0;
     return string(fpsString);
 }
-void nkhTest();
+/************************* nkhEnd: FPS counter *************************/
 
-int timetest(int a, int b)
-{
-    return a+b ;
-}
-void  nkhvoid()
-{
-    for(int i=0 ; i<1000000 ; ++i);
-}
+void nkhTest();
 
 int main(int argc, char *argv[])
 {
@@ -87,9 +84,6 @@ int main(int argc, char *argv[])
 
 void nkhMain(path inDir, path outDir, vector<path> frames)
 {
-    int d=5 , m=5;
-    cout << measure<std::chrono::milliseconds>(timetest, d,m) << endl;
-    measure<std::chrono::nanoseconds>(nkhvoid);
     //    nkhTest();
     return;
 
