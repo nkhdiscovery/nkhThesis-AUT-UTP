@@ -13,6 +13,8 @@ LIBS += -lopencv_highgui -lopencv_videoio -lopencv_photo -lopencv_imgcodecs -lop
 LIBS += -lopencv_cudafilters -lopencv_video -lopencv_ml -lopencv_imgproc -lopencv_flann -lopencv_cudaarithm
 LIBS += -lopencv_core -lopencv_hal -lopencv_cudev
 
+QMAKE_CXXFLAGS += -std=c++11
+
 INCLUDEPATH +=  -I/usr/local/include/opencv -I/usr/local/include
 
 DEFINES += "WITH_CUDA=1"
@@ -23,5 +25,6 @@ TEMPLATE = app
 SOURCES += main.cpp
 
 HEADERS += \
-    errorcodes.h
+    errorcodes.h \
+    nkhUtil.h
 

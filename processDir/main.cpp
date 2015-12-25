@@ -1,11 +1,4 @@
 #include <QCoreApplication>
-#include <cstdio>
-#include <iostream>
-#include <boost/filesystem.hpp>
-using namespace boost::filesystem;
-#include <vector>
-#include <algorithm>
-using namespace std;
 #include <opencv/cv.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
@@ -13,26 +6,8 @@ using namespace std;
 #include <opencv2/cudawarping.hpp>
 using namespace cv;
 
-#include <time.h>
-#include <limits.h>
-#include <cstring>
-
 #include "errorcodes.h"
-
-
-/****************** nkhStart: macro utils ******************/
-#define errStr(x) #x
-
-#define checkPath(p) if(!exists(p)){\
-    cerr << p << " : " << errStr(NO_SUCH_FILE_OR_DIR\n);\
-    return NO_SUCH_FILE_OR_DIR; }
-#define checkDir(p) checkPath(p);\
-    if(!is_directory(p)){\
-    cerr << p << " : " << errStr(NOT_A_DIR\n);\
-    return NOT_A_DIR; }
-
-/****************** nkhEnd: macro utils ******************/
-
+#include "nkhUtil.h"
 
 /****************** nkhStart: global vars ******************/
 time_t timerStart, timerEnd;
@@ -67,6 +42,14 @@ string fpsCalcEnd()
 }
 void nkhTest();
 
+int timetest(int a, int b)
+{
+    return a+b ;
+}
+void  nkhvoid()
+{
+    for(int i=0 ; i<1000000 ; ++i);
+}
 
 int main(int argc, char *argv[])
 {
@@ -96,7 +79,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        cerr << errStr(error: INSUFFICIENT_ARGUMENTS\n);
+        cerr << getStr(error: INSUFFICIENT_ARGUMENTS\n);
         return INSUFFICIENT_ARGUMENTS;
     }
     //return a.exec();
@@ -104,8 +87,11 @@ int main(int argc, char *argv[])
 
 void nkhMain(path inDir, path outDir, vector<path> frames)
 {
-    //nkhTest();
-    //return;
+    int d=5 , m=5;
+    cout << measure<std::chrono::milliseconds>(timetest, d,m) << endl;
+    measure<std::chrono::nanoseconds>(nkhvoid);
+    //    nkhTest();
+    return;
 
 
     initFPSTimer();
@@ -115,14 +101,12 @@ void nkhMain(path inDir, path outDir, vector<path> frames)
     for (vector<path>::const_iterator it(frames.begin()), it_end(frames.end()); it != it_end; ++it)
     {
         fpsCalcStart();
-
-        /*
         cv::Mat src = cv::imread(it->string(), cv::IMREAD_GRAYSCALE);
         cv::Mat dst;
-        resize(src, dst, Size(640,480));
-        cv::threshold(src, dst, 128.0, 255.0, cv::THRESH_BINARY);
+        //resize(src, dst, Size(src.size().width/2.0, src.size().height/2.0));
+        //cv::threshold(src, dst, 128.0, 255.0, cv::THRESH_BINARY);
         //cv::imshow("Result", dst);
-        */
+
         /*
         cv::Mat src_host = cv::imread(it->string(), cv::IMREAD_GRAYSCALE), dst_host;
         cv::cuda::GpuMat dst, src;
@@ -193,9 +177,13 @@ void nkhTest()
         {
             break;
         }
+
+
         resize(src,src, cvSize(src.size().width/2,src.size().height/2));
         cvtColor(src, imgHSV, COLOR_BGR2HSV);
+
         inRange(imgHSV, Scalar(iLowH, iLowS, iLowV), Scalar(iHighH, iHighS, iHighV), dst); //Threshold the image
+
         //        inRange(src, Scalar(iLowB, iLowG, iLowR), Scalar(iHighB, iHighG, iHighR), dst2); //Threshold the image
 
 
@@ -209,8 +197,6 @@ void nkhTest()
         //        Mat resized;
         //resize(dst,dst, cvSize(dst.size().width/2.0,dst.size().height/2.0));
 
-
-
         medianBlur(dst,dst,5);
 
         //nkhImshow_Write(src, dst, "HSV", "HSV","green");
@@ -223,11 +209,17 @@ void nkhTest()
         int params[]={70,210,3};
         Mat edges;
         blur( dst, edges, Size(3,3) );
-        Canny( dst, edges, params[0], params[1],params[2]);
-        findContours( edges, contours, order, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
-        Mat showContours = Mat::zeros( edges.size(), CV_8UC3 );
-        resize(src,showContours,cvSize(src.size().width/2.0,src.size().height/2.0));
 
+        /// TIME CONSUMING
+        //Canny( dst, edges, params[0], params[1],params[2]);
+
+
+        findContours( edges, contours, order, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
+
+        Mat showContours = Mat::zeros( edges.size(), CV_8UC3 );
+
+        /// TIME BOTTLENECK : Extra?
+        resize(src,showContours,cvSize(src.size().width/2.0,src.size().height/2.0));
 
 
         RNG rng(12345);
@@ -266,9 +258,9 @@ void nkhTest()
             for( int j = 0; j < 4; j++ )
                 line( showContours, rect_points[j], rect_points[(j+1)%4], color, 1, 8 );
         }
-        imshow("Contoures", showContours);
 
-
+        // TIME CONSUMING
+        //imshow("Contoures", showContours);
 
         //        for( int i = 0; i< contours.size(); i++ )
         //        {
@@ -276,8 +268,8 @@ void nkhTest()
         //            drawContours( showContours, contours, i, color, 2, 8, order, 0, Point() );
         //        }
         //        imshow("Contoures",showContours);
-        imshow("Thresh",dst);
-
+        // TIME CONSUMING
+       // imshow("Thresh",dst);
 
         fpsCalcEnd();
         if(timerFPS !=INFINITY )
