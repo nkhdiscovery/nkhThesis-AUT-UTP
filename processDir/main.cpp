@@ -57,15 +57,11 @@ int main(int argc, char *argv[])
         cerr << "NOT USING CUDA\n";
     }
 
-    if (argc == 3)
+    if (argc == 4)
     {
         path inDir(argv[1]), outDir(argv[2]);
         checkDir(inDir);
         checkDir(outDir);
-        //TODO: handle non-regular files in dir, further handle non-images! I considered the inDir contains nothing than the frames.
-        copy(directory_iterator(inDir), directory_iterator(), back_inserter(inpVec));
-        sort(inpVec.begin(), inpVec.end());
-
         nkhMain(inDir, outDir, inpVec);
 
         return NORMAL_STATE;
@@ -122,7 +118,7 @@ void nkhTest()
         }
 
 
-//        resize(src,src, cvSize(src.size().width/2,src.size().height/2));
+        //        resize(src,src, cvSize(src.size().width/2,src.size().height/2));
         cvtColor(src, imgHSV, COLOR_BGR2HSV);
 
         inRange(imgHSV, Scalar(iLowH, iLowS, iLowV), Scalar(iHighH, iHighS, iHighV), dst); //Threshold the image
@@ -162,7 +158,7 @@ void nkhTest()
         Mat showContours = Mat::zeros( edges.size(), CV_8UC3 );
 
         /// TIME BOTTLENECK : Extra?
-//        resize(src,showContours,cvSize(src.size().width/2.0,src.size().height/2.0));
+        //        resize(src,showContours,cvSize(src.size().width/2.0,src.size().height/2.0));
 
 
         RNG rng(12345);
