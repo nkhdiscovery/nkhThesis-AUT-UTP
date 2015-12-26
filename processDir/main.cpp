@@ -122,18 +122,27 @@ void nkhMain(path inVid, path inFile, path outDir)
          if(currentframe.size().area() <= 0)
              break;
 
-         map<int, FrameObjects>::iterator it = vidObjects.find(frameCount++);
+         map<int, FrameObjects>::iterator it = vidObjects.find(frameCount);
          if(it != vidObjects.end())
          {
              FrameObjects tmpFrameObj = it->second;
              for(int i=0 ; i < tmpFrameObj.getObjs().size(); i++)
              {
-                 rectangle(currentframe, tmpFrameObj.getObjs().at(i).getBorder(), Scalar(0,0,255));
+                 cv::Rect tmpBorder(tmpFrameObj.getObjs().at(i).getBorder());
+                 //Scale ROI! annotation is done in 720p, the input is 1080p
+                 cv::Rect resizedBorder(tmpBorder.x*1.5, tmpBorder.y*1.5, tmpBorder.width*1.5, tmpBorder.height*1.5);
+                 cv::Rect imgBounds(0,0,currentframe.cols, currentframe.rows);
+                 resizedBorder = resizedBorder & imgBounds;
+
+                 imwrite(outDir.string() + "/" + tmpFrameObj.getObjs().at(i).getName() + "_" +
+                         to_string(frameCount) + ".png", currentframe(resizedBorder));
+                 //rectangle(currentframe, tmpBorder, Scalar(0,0,255));
              }
          }
-         imshow("Orig" , currentframe);
+         //imshow("Orig" , currentframe);
          if(cvWaitKey(10) == 'q')
              break;
+         frameCount++;
     }
 
     return;
