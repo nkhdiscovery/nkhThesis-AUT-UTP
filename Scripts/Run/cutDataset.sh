@@ -1,0 +1,1 @@
+ls $AUTUTP_DIR_MP4/*.mp4 | while read a ; do b=${a##*/}; name=`echo $b | sed 's/\.mp4//g'` ; mkdir ../../test/output/$name ; ../../build-processDir-Desktop-Release/processDir "$a" ../../DATA/merged/$name.ant.merged ../../test/output/$name ; done
