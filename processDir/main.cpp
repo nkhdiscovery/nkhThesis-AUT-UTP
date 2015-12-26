@@ -129,6 +129,7 @@ void nkhMain(path inVid, path inFile, path outDir)
              for(int i=0 ; i < tmpFrameObj.getObjs().size(); i++)
              {
                  cv::Rect tmpBorder(tmpFrameObj.getObjs().at(i).getBorder());
+
                  //Scale ROI! annotation is done in 720p, the input is 1080p
                  cv::Rect resizedBorder(tmpBorder.x*1.5, tmpBorder.y*1.5, tmpBorder.width*1.5, tmpBorder.height*1.5);
                  cv::Rect imgBounds(0,0,currentframe.cols, currentframe.rows);
@@ -144,7 +145,6 @@ void nkhMain(path inVid, path inFile, path outDir)
              break;
          frameCount++;
     }
-
     return;
 }
 
