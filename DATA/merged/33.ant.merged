@@ -1,0 +1,117 @@
+0 Panel Above Above_1 R 902 369 49 40 0 1 1
+1 Panel Above Above_1 R 902 368 49 40 0 1 0
+2 Panel Above Above_1 R 902 367 50 40 0 1 0
+3 Panel Above Above_1 R 902 366 50 41 0 1 0
+4 Panel Above Above_1 R 902 366 51 41 0 1 0
+5 Panel Above Above_1 R 902 365 51 41 0 1 0
+6 Panel Above Above_1 R 902 364 52 42 0 1 0
+7 Panel Above Above_1 R 903 363 52 42 0 1 0
+8 Panel Above Above_1 R 903 363 53 42 0 1 0
+9 Panel Above Above_1 R 903 362 53 43 0 1 0
+10 Panel Above Above_1 R 903 361 54 43 0 1 0
+11 Panel Above Above_1 R 903 361 54 43 0 1 0
+12 Panel Above Above_1 R 903 360 55 44 0 1 0
+13 Panel Above Above_1 R 903 359 55 44 0 1 0
+14 Panel Above Above_1 R 904 359 56 45 0 1 1
+15 Panel Above Above_1 R 904 357 56 45 0 1 0
+16 Panel Above Above_1 R 905 356 57 45 0 1 0
+17 Panel Above Above_1 R 906 354 57 46 0 1 0
+18 Panel Above Above_1 R 907 353 58 46 0 1 0
+19 Panel Above Above_1 R 907 351 58 47 0 1 0
+20 Panel Above Above_1 R 908 350 59 47 0 1 0
+21 Panel Above Above_1 R 909 348 60 48 0 1 0
+22 Panel Above Above_1 R 910 347 60 48 0 1 0
+23 Panel Above Above_1 R 911 346 61 48 0 1 0
+24 Panel Above Above_1 R 911 344 61 49 0 1 0
+25 Panel Above Above_1 R 912 343 62 49 0 1 0
+26 Panel Above Above_1 R 913 341 63 50 0 1 0
+27 Panel Above Above_1 R 914 340 63 50 0 1 0
+28 Panel Above Above_1 R 914 338 64 51 0 1 0
+29 Panel Above Above_1 R 915 337 64 51 0 1 0
+30 Panel Above Above_1 R 916 336 65 52 0 1 0
+31 Panel Above Above_1 R 917 334 66 52 0 1 0
+32 Panel Above Above_1 R 918 333 66 52 0 1 0
+33 Panel Above Above_1 R 918 331 67 53 0 1 0
+34 Panel Above Above_1 R 919 330 67 53 0 1 0
+35 Panel Above Above_1 R 920 328 68 54 0 1 0
+36 Panel Above Above_1 R 921 327 69 54 0 1 0
+37 Panel Above Above_1 R 921 325 69 55 0 1 0
+38 Panel Above Above_1 R 922 324 70 55 0 1 0
+39 Panel Above Above_1 R 923 323 70 55 0 1 0
+40 Panel Above Above_1 R 924 321 71 56 0 1 0
+41 Panel Above Above_1 R 925 320 72 56 0 1 0
+42 Panel Above Above_1 R 925 318 72 57 0 1 0
+43 Panel Above Above_1 R 926 317 73 57 0 1 0
+44 Panel Above Above_1 R 927 315 73 58 0 1 0
+45 Panel Above Above_1 R 928 314 74 58 0 1 0
+46 Panel Above Above_1 R 929 313 75 59 0 1 1
+47 Panel Above Above_1 R 931 311 73 59 0 1 0
+48 Panel Above Above_1 R 933 310 72 59 0 1 0
+49 Panel Above Above_1 R 935 308 71 59 0 1 0
+50 Panel Above Above_1 R 938 307 70 60 0 1 1
+51 Panel Above Above_1 R 932 303 72 61 0 1 1
+52 Panel Above Above_1 R 939 303 72 61 0 1 1
+53 Panel Above Above_1 R 938 299 73 61 0 1 0
+54 Panel Above Above_1 R 938 296 74 62 0 1 1
+55 Panel Above Above_1 R 941 293 75 63 0 1 1
+56 Panel Above Above_1 R 941 290 76 65 0 1 0
+57 Panel Above Above_1 R 942 287 78 67 0 1 0
+58 Panel Above Above_1 R 943 284 80 69 0 1 1
+59 Panel Above Above_1 R 941 281 81 69 0 1 1
+60 Panel Above Above_1 R 945 279 82 69 0 1 1
+61 Panel Above Above_1 R 942 275 83 70 0 1 1
+62 Panel Above Above_1 R 948 273 84 71 0 1 1
+63 Panel Above Above_1 R 943 269 85 72 0 1 1
+64 Panel Above Above_1 R 951 266 86 73 0 1 1
+65 Panel Above Above_1 R 945 263 87 74 0 1 1
+66 Panel Above Above_1 R 951 262 88 75 0 1 1
+67 Panel Above Above_1 R 951 258 89 76 0 1 0
+68 Panel Above Above_1 R 951 255 90 77 0 1 0
+69 Panel Above Above_1 R 952 252 92 79 0 1 1
+70 Panel Above Above_1 R 953 249 93 80 0 1 0
+71 Panel Above Above_1 R 955 247 94 81 0 1 0
+72 Panel Above Above_1 R 956 244 95 82 0 1 0
+73 Panel Above Above_1 R 958 242 97 83 0 1 1
+74 Panel Above Above_1 R 956 237 99 85 0 1 1
+75 Panel Above Above_1 R 962 234 101 87 0 1 1
+76 Panel Above Above_1 R 959 228 103 89 0 1 1
+77 Panel Above Above_1 R 966 227 105 91 0 1 1
+78 Panel Above Above_1 R 964 222 107 93 0 1 1
+79 Panel Above Above_1 R 972 221 109 95 0 1 1 Text Persian Persian_1 R 982 231 55 24 0 1 1 Text Persian Persian_2 R 977 264 60 18 0 1 1 Text Persian Persian_3 R 1023 292 34 16 0 1 1
+80 Panel Above Above_1 R 967 219 111 97 0 1 1 Text Persian Persian_1 R 977 230 56 24 0 1 1 Text Persian Persian_2 R 975 263 61 18 0 1 1 Text Persian Persian_3 R 1021 292 34 16 0 1 1
+81 Panel Above Above_1 R 971 219 114 99 0 1 1 Text Persian Persian_1 R 981 232 57 24 0 1 1 Text Persian Persian_2 R 981 265 62 18 0 1 1 Text Persian Persian_3 R 1028 294 35 16 0 1 1
+82 Panel Above Above_1 R 974 212 116 101 0 1 0 Text Persian Persian_1 R 984 226 58 24 0 1 0 Text Persian Persian_2 R 983 259 63 18 0 1 0 Text Persian Persian_3 R 1031 290 36 16 0 1 0
+83 Panel Above Above_1 R 978 206 118 103 0 1 1 Text Persian Persian_1 R 987 220 60 24 0 1 1 Text Persian Persian_2 R 985 254 64 18 0 1 1 Text Persian Persian_3 R 1035 286 37 16 0 1 1
+84 Panel Above Above_1 R 980 206 121 105 0 1 1 Text Persian Persian_1 R 989 218 61 24 0 1 1 Text Persian Persian_2 R 986 254 65 18 0 1 0 Text Persian Persian_3 R 1037 286 38 16 0 1 0
+85 Panel Above Above_1 R 978 205 124 107 0 1 1 Text Persian Persian_1 R 986 219 63 24 0 1 1 Text Persian Persian_2 R 988 255 66 19 0 1 1 Text Persian Persian_3 R 1039 287 39 16 0 1 1
+86 Panel Above Above_1 R 986 198 124 109 0 1 1 Text Persian Persian_1 R 996 213 65 24 0 1 1 Text Persian Persian_2 R 993 247 67 20 0 1 1 Text Persian Persian_3 R 1047 282 40 16 0 1 1
+87 Panel Above Above_1 R 987 188 128 111 0 1 1 Text Persian Persian_1 R 995 203 66 24 0 1 1 Text Persian Persian_2 R 996 240 68 20 0 1 1 Text Persian Persian_3 R 1050 274 41 16 0 1 1
+88 Panel Above Above_1 R 990 186 132 113 0 1 1 Text Persian Persian_1 R 1001 202 68 24 0 1 1 Text Persian Persian_2 R 1000 238 69 21 0 1 1 Text Persian Persian_3 R 1054 275 42 16 0 1 1
+89 Panel Above Above_1 R 985 180 136 115 0 1 1 Text Persian Persian_1 R 998 196 70 25 0 1 1 Text Persian Persian_2 R 1000 232 70 22 0 1 1 Text Persian Persian_3 R 1051 269 43 16 0 1 1
+90 Panel Above Above_1 R 996 174 139 117 0 1 1 Text Persian Persian_1 R 1007 189 72 25 0 1 1 Text Persian Persian_2 R 1007 228 71 22 0 1 1 Text Persian Persian_3 R 1063 266 44 16 0 1 1
+91 Panel Above Above_1 R 994 161 142 120 0 1 1 Text Persian Persian_1 R 1007 177 74 26 0 1 1 Text Persian Persian_2 R 1007 216 73 23 0 1 1 Text Persian Persian_3 R 1065 254 45 17 0 1 1
+92 Panel Above Above_1 R 999 155 145 123 0 1 0 Text Persian Persian_1 R 1012 173 76 27 0 1 1 Text Persian Persian_2 R 1014 212 75 24 0 1 1 Text Persian Persian_3 R 1073 253 46 18 0 1 1
+93 Panel Above Above_1 R 1004 149 148 127 0 1 1 Text Persian Persian_1 R 1012 166 78 28 0 1 1 Text Persian Persian_2 R 1013 208 77 25 0 1 1 Text Persian Persian_3 R 1072 247 47 19 0 1 1
+94 Panel Above Above_1 R 1009 143 151 130 0 1 1 Text Persian Persian_1 R 1017 158 79 28 0 1 0 Text Persian Persian_2 R 1018 200 78 25 0 1 0 Text Persian Persian_3 R 1079 244 48 19 0 1 1
+95 Panel Above Above_1 R 1014 134 154 131 0 1 0 Text Persian Persian_1 R 1023 150 81 28 0 1 0 Text Persian Persian_2 R 1024 193 79 25 0 1 0 Text Persian Persian_3 R 1085 236 49 19 0 1 0
+96 Panel Above Above_1 R 1019 126 158 132 0 1 1 Text Persian Persian_1 R 1029 142 83 29 0 1 1 Text Persian Persian_2 R 1030 186 80 26 0 1 1 Text Persian Persian_3 R 1092 228 50 19 0 1 1
+97 Panel Above Above_1 R 1020 116 157 144 0 1 1 Text Persian Persian_1 R 1032 137 85 30 0 1 1 Text Persian Persian_2 R 1031 182 82 27 0 1 1 Text Persian Persian_3 R 1098 226 51 20 0 1 1
+98 Panel Above Above_1 R 1024 106 163 148 0 1 0 Text Persian Persian_1 R 1038 127 86 31 0 1 0 Text Persian Persian_2 R 1034 173 85 27 0 1 1 Text Persian Persian_3 R 1105 218 51 20 0 1 0
+99 Panel Above Above_1 R 1028 96 169 153 0 1 0 Text Persian Persian_1 R 1045 118 87 32 0 1 1 Text Persian Persian_2 R 1043 165 88 27 0 1 1 Text Persian Persian_3 R 1112 210 51 20 0 1 0
+100 Panel Above Above_1 R 1032 86 175 158 0 1 0 Text Persian Persian_1 R 1046 110 88 33 0 1 1 Text Persian Persian_2 R 1043 159 91 28 0 1 1 Text Persian Persian_3 R 1119 203 51 20 0 1 1
+101 Panel Above Above_1 R 1037 76 182 163 0 1 1 Text Persian Persian_1 R 1055 106 90 34 0 1 1 Text Persian Persian_2 R 1052 156 93 28 0 1 1 Text Persian Persian_3 R 1130 204 51 21 0 1 1
+102 Panel Above Above_1 R 1035 66 189 168 0 1 1 Text Persian Persian_1 R 1056 92 92 35 0 1 1 Text Persian Persian_2 R 1053 147 95 29 0 1 1 Text Persian Persian_3 R 1131 193 51 22 0 1 1
+103 Panel Above Above_1 R 1049 57 196 173 0 1 1 Text Persian Persian_1 R 1069 85 94 37 0 1 1 Text Persian Persian_2 R 1064 141 98 30 0 1 1 Text Persian Persian_3 R 1147 188 52 23 0 1 1
+104 Panel Above Above_1 R 1048 43 200 179 0 1 1 Text Persian Persian_1 R 1067 69 97 39 0 1 1 Text Persian Persian_2 R 1064 129 100 32 0 1 1 Text Persian Persian_3 R 1151 176 54 23 0 1 1
+105 Panel Above Above_1 R 1059 29 204 185 0 1 1 Text Persian Persian_1 R 1079 63 100 41 0 1 1 Text Persian Persian_2 R 1077 120 102 34 0 1 1 Text Persian Persian_3 R 1159 170 56 24 0 1 0
+106 Panel Above Above_1 R 1059 15 209 191 0 1 1 Text Persian Persian_1 R 1080 49 104 43 0 1 1 Text Persian Persian_2 R 1078 108 104 36 0 1 1 Text Persian Persian_3 R 1168 164 58 25 0 1 1
+107 Panel Above Above_1 R 1074 3 206 197 0 1 1 Text Persian Persian_1 R 1094 36 106 45 0 1 1 Text Persian Persian_2 R 1089 99 111 36 0 1 1 Text Persian Persian_3 R 1183 154 58 25 0 1 1
+108 Panel Above Above_1 R 1076 2 204 192 0 1 1 Text Persian Persian_1 R 1097 23 109 47 0 1 1 Text Persian Persian_2 R 1090 90 119 37 0 1 1 Text Persian Persian_3 R 1193 145 58 25 0 1 1
+109 Panel Above Above_1 R 1084 1 196 194 0 1 1 Text Persian Persian_1 R 1106 15 113 44 0 1 1 Text Persian Persian_2 R 1097 81 121 37 0 1 1 Text Persian Persian_3 R 1202 136 63 27 0 1 0
+110 Panel Above Above_1 R 1092 0 187 181 0 1 0 Text Persian Persian_1 R 1112 1 118 42 0 1 1 Text Persian Persian_2 R 1108 66 123 37 0 1 1 Text Persian Persian_3 R 1212 127 68 30 0 1 1
+111 Panel Above Above_1 R 1101 0 178 169 0 1 0 Text Persian Persian_1 R 1117 0 118 29 0 1 1 Text Persian Persian_2 R 1120 52 125 37 0 1 1 Text Persian Persian_3 R 1225 114 55 30 0 1 1
+112 Panel Above Above_1 R 1110 0 170 157 0 1 1 Text Persian Persian_2 R 1132 35 128 38 0 1 1 Text Persian Persian_3 R 1241 102 39 30 0 1 1
+113 Panel Above Above_1 R 1121 0 158 146 0 1 0 Text Persian Persian_2 R 1137 22 136 42 0 1 1 Text Persian Persian_3 R 1246 87 34 30 0 1 1
+114 Panel Above Above_1 R 1133 0 146 136 0 1 0 Text Persian Persian_2 R 1149 9 131 42 0 1 1
+115 Panel Above Above_1 R 1145 0 134 126 0 1 0 Text Persian Persian_2 R 1157 0 123 31 0 1 1
+116 Panel Above Above_1 R 1157 0 123 116 0 1 1
