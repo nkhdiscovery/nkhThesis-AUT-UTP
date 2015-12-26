@@ -87,18 +87,32 @@ void nkhMain(path inVid, path inFile, path outDir)
 
     map<int, FrameObjects> vidObjects = parseFile(inFile);
 
+    map<int, FrameObjects>::iterator it = vidObjects.find(139);
 
-    for (map<int , FrameObjects>::iterator it=vidObjects.begin();
-         it!= vidObjects.end(); ++it)
+    /* //sample for find
+    if(it != vidObjects.end())
     {
-        cout << "Frame : " << it->first << endl;
         FrameObjects tmpFrameObj = it->second;
         for(int i=0 ; i < tmpFrameObj.getObjs().size(); i++)
         {
             cout<< tmpFrameObj.getObjs().at(i).getName() <<  endl;
         }
     }
+    */
 
+    /* //sample for traverse
+    for (map<int , FrameObjects>::iterator it=vidObjects.begin();
+         it!= vidObjects.end(); ++it)
+    {
+        cout << "Frame : " << it->first << endl;
+        FrameObjects tmpFrameObj = it->second;
+
+        for(int i=0 ; i < tmpFrameObj.getObjs().size(); i++)
+        {
+            cout<< tmpFrameObj.getObjs().at(i).getName() <<  endl;
+        }
+    }
+    */
 
 /*
     //Open the video file
