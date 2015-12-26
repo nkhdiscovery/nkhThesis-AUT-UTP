@@ -87,13 +87,17 @@ void nkhMain(path inVid, path inFile, path outDir)
 
     map<int, FrameObjects> vidObjects = parseFile(inFile);
 
-    /*
+
     for (map<int , FrameObjects>::iterator it=vidObjects.begin();
          it!= vidObjects.end(); ++it)
     {
-        cout << it->first << '\n';
+        cout << "Frame : " << it->first << endl;
+        FrameObjects tmpFrameObj = it->second;
+        for(int i=0 ; i < tmpFrameObj.getObjs().size(); i++)
+        {
+            cout<< tmpFrameObj.getObjs().at(i).getName() <<  endl;
+        }
     }
-    */
 
 
 /*
@@ -131,7 +135,6 @@ map<int, FrameObjects> parseFile(path inFile)
     }
     return theMap;
 }
-
 
 /*
 void nkhTest()

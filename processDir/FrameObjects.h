@@ -7,6 +7,9 @@
 #include <sstream>
 using namespace std;
 
+//TODO
+// Object panels are considered to be rectangle
+
 class FrameObjects{
 private:
     vector<PanelObject> objects;
@@ -27,20 +30,27 @@ public:
     {
         stringstream ss(inString);
         ss >> frameNumber;
-//        cout << " Frame num: " << frameNumber << endl;
         string tmpCat, tmpType, tmpName, tmpShape;
         while(ss >> tmpCat >> tmpType >> tmpName >> tmpShape)
         {
             if(tmpShape=="R")
             {
-                int tmpNumbers[7]={0};
-                for (int i=0 ; i < 7 ; ss >> tmpNumbers[i++]);
+                int nums[7]={0};
+                for (int i=0 ; i < 7 ; ss >> nums[i++]);
+                objects.push_back(PanelObject(tmpCat, tmpType, tmpName,
+                                                  cv::Rect(nums[0],nums[1], nums[2],nums[3]))
+                                                  );
 //                cout << tmpName << " : " <<
-//                        tmpNumbers[0] << ", " << tmpNumbers[1] << ", " <<
-//                        tmpNumbers[2] << ", " << tmpNumbers[3] << endl;
+//                        nums[0] << ", " << nums[1] << ", " <<
+//                        nums[2] << ", " << nums[3] << endl;
             }
         }
     }
+    vector<PanelObject> getObjs()
+    {
+        return objects;
+    }
+
     int getFrameNumber()
     {
         return frameNumber;
