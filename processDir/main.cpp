@@ -87,9 +87,8 @@ void nkhMain(path inVid, path inFile, path outDir)
 
     map<int, FrameObjects> vidObjects = parseFile(inFile);
 
-    map<int, FrameObjects>::iterator it = vidObjects.find(139);
-
     /* //sample for find
+    map<int, FrameObjects>::iterator it = vidObjects.find(139);
     if(it != vidObjects.end())
     {
         FrameObjects tmpFrameObj = it->second;
@@ -114,19 +113,29 @@ void nkhMain(path inVid, path inFile, path outDir)
     }
     */
 
-/*
     //Open the video file
     VideoCapture cap(inVid.string());
     Mat currentframe;
-    cap >> currentframe;
+    int frameCount = 0;
+    while (true) {
+         cap >> currentframe;
+         if(currentframe.size().area() <= 0)
+             break;
 
+         map<int, FrameObjects>::iterator it = vidObjects.find(frameCount++);
+         if(it != vidObjects.end())
+         {
+             FrameObjects tmpFrameObj = it->second;
+             for(int i=0 ; i < tmpFrameObj.getObjs().size(); i++)
+             {
+                 rectangle(currentframe, tmpFrameObj.getObjs().at(i).getBorder(), Scalar(0,0,255));
+             }
+         }
+         imshow("Orig" , currentframe);
+         if(cvWaitKey(10) == 'q')
+             break;
+    }
 
-    Mat cropped;
-    cv::Rect panel(714,481,41,55);
-    currentframe(panel).copyTo(cropped);
-    imshow("Cropped", cropped);
-    cvWaitKey();
-    */
     return;
 }
 
