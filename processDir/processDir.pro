@@ -25,5 +25,7 @@ TEMPLATE = app
 SOURCES += main.cpp
 
 HEADERS += \
-    nkhUtil.h
+    nkhUtil.h \
+    FrameObjects.h \
+    PanelObject.h
 

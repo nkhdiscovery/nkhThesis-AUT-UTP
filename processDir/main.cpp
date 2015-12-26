@@ -5,14 +5,18 @@
 #include <opencv2/cudaarithm.hpp>
 #include <opencv2/cudawarping.hpp>
 using namespace cv;
+#include <fstream>
+#include <map>
+using namespace std;
 
 #include "nkhUtil.h"
+#include "FrameObjects.h"
 
 /****************** nkhStart: global vars ******************/
 
 /****************** nkhEnd: global vars ******************/
 
-void nkhMain(path inDir, path outDir, vector<path> frames);
+void nkhMain(path inVid, path inFile, path outDir);
 
 /************************* nkhStart: FPS counter *************************/
 //TODO: implement as a template
@@ -45,7 +49,9 @@ string fpsCalcEnd()
 }
 /************************* nkhEnd: FPS counter *************************/
 
-void nkhTest();
+//void nkhTest();
+
+map<int, FrameObjects> parseFile(path inFile);
 
 int main(int argc, char *argv[])
 {
@@ -59,10 +65,11 @@ int main(int argc, char *argv[])
 
     if (argc == 4)
     {
-        path inDir(argv[1]), outDir(argv[2]);
-        checkDir(inDir);
+        path inVid(argv[1]), inFile(argv[2]), outDir(argv[3]);
+        checkRegularFile(inVid);
+        checkRegularFile(inFile);
         checkDir(outDir);
-        nkhMain(inDir, outDir, inpVec);
+        nkhMain(inVid, inFile, outDir);
 
         return NORMAL_STATE;
     }
@@ -74,13 +81,59 @@ int main(int argc, char *argv[])
     //return a.exec();
 }
 
-void nkhMain(path inDir, path outDir, vector<path> frames)
+
+void nkhMain(path inVid, path inFile, path outDir)
 {
 
-    nkhTest();
+    map<int, FrameObjects> vidObjects = parseFile(inFile);
+
+    /*
+    for (map<int , FrameObjects>::iterator it=vidObjects.begin();
+         it!= vidObjects.end(); ++it)
+    {
+        cout << it->first << '\n';
+    }
+    */
+
+
+/*
+    //Open the video file
+    VideoCapture cap(inVid.string());
+    Mat currentframe;
+    cap >> currentframe;
+
+
+    Mat cropped;
+    cv::Rect panel(714,481,41,55);
+    currentframe(panel).copyTo(cropped);
+    imshow("Cropped", cropped);
+    cvWaitKey();
+    */
     return;
 }
 
+map<int, FrameObjects> parseFile(path inFile)
+{
+    map<int, FrameObjects> theMap;
+
+    //Open the merged annotation file and parse to map
+    ifstream txtFile(inFile.string());
+    if(txtFile.is_open())
+    {
+        string tmpString;
+        while(getline(txtFile, tmpString))
+        {
+            FrameObjects tmpFrameObject;
+            tmpFrameObject.parse(tmpString);
+            theMap[tmpFrameObject.getFrameNumber()] = tmpFrameObject;
+        }
+        txtFile.close();
+    }
+    return theMap;
+}
+
+
+/*
 void nkhTest()
 {
     long fpsSum = 0, counter = 0 ;
@@ -224,3 +277,4 @@ void nkhTest()
         }
     }
 }
+*/
