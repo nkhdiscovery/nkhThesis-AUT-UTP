@@ -49,7 +49,17 @@ string fpsCalcEnd()
 }
 /************************* nkhEnd: FPS counter *************************/
 
+
+/******************** nkhStart opencv wrappers ********************/
+void nkhImshow(const char* windowName, cv::Mat img)
+{
+    imshow(windowName, img);
+}
+
+/******************** nkhEnd opencv wrappers ********************/
+
 //void nkhTest();
+void cropGroundTruth(VideoCapture cap, path inFile, path outDir);
 
 map<int, FrameObjects> parseFile(path inFile);
 
@@ -84,9 +94,44 @@ int main(int argc, char *argv[])
 
 void nkhMain(path inVid, path inFile, path outDir)
 {
+    //Open the video file
+    VideoCapture cap(inVid.string());
 
-    map<int, FrameObjects> vidObjects = parseFile(inFile);
+    //TODO: parse commandline arguments for different tasks
+    //task1 : cropGroundTruth(VideoCapture cap, path inFile, path outDir)
+    //task1 is done, ran once.
 
+    //task2: resize and preproc.
+    Mat currentFrame;
+    int frameCount = 0;
+    initFPSTimer();
+    while(true)
+    {
+        cap >> currentFrame;
+        if(currentFrame.size().area() <= 0)
+            break;
+        fpsCalcStart();
+
+        Mat frame_1_3;
+        resize(currentFrame, frame_1_3, Size(currentFrame.size().width/3,currentFrame.size().height/3));
+        if(WITH_VISUALIZATION)
+        {
+            nkhImshow("resized orig", frame_1_3);
+            if(cvWaitKey(1) == 'q')
+            {
+                break;
+            }
+        }
+
+        fpsCalcEnd();
+        //cout<< timerFPS << endl;
+        frameCount++;
+    }
+    return;
+}
+
+void cropGroundTruth(VideoCapture cap, path inFile, path outDir)
+{
     /* //sample for find
     map<int, FrameObjects>::iterator it = vidObjects.find(139);
     if(it != vidObjects.end())
@@ -113,8 +158,7 @@ void nkhMain(path inVid, path inFile, path outDir)
     }
     */
 
-    //Open the video file
-    VideoCapture cap(inVid.string());
+    map<int, FrameObjects> vidObjects = parseFile(inFile);
     Mat currentframe;
     int frameCount = 0;
     while (true) {
@@ -129,7 +173,6 @@ void nkhMain(path inVid, path inFile, path outDir)
              for(int i=0 ; i < tmpFrameObj.getObjs().size(); i++)
              {
                  cv::Rect tmpBorder(tmpFrameObj.getObjs().at(i).getBorder());
-
                  //Scale ROI! annotation is done in 720p, the input is 1080p
                  cv::Rect resizedBorder(tmpBorder.x*1.5, tmpBorder.y*1.5, tmpBorder.width*1.5, tmpBorder.height*1.5);
                  cv::Rect imgBounds(0,0,currentframe.cols, currentframe.rows);
@@ -145,7 +188,6 @@ void nkhMain(path inVid, path inFile, path outDir)
              break;
          frameCount++;
     }
-    return;
 }
 
 map<int, FrameObjects> parseFile(path inFile)
