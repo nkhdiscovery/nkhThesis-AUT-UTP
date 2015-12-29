@@ -322,6 +322,18 @@ void nkhMain(path inVid, path inFile, path outDir)
                                              currentFrame.size().height/RESIZE_FACTOR));
         cvtColor(frameResized, frameResized_gray, COLOR_BGR2GRAY);
 
+        //SaliencyMap
+        Mat saliency;
+        computeSaliency(frameResized_gray, saliency);
+        Mat masked, binMask;
+        saliency = saliency * 3;
+        saliency.convertTo( saliency, CV_8U );
+        // adaptative thresholding using Otsu's method, to make saliency map binary
+        threshold( saliency, binMask, 0, 255, THRESH_BINARY | THRESH_OTSU );
+        frameResized.copyTo(masked, binMask);
+        //maybeImshow("orig", frameResized);
+        //maybeImshow("Saliency", masked);
+
         /*
         if(maybeImshow("resized orig", frameResized)=='q')
             break;
@@ -333,18 +345,6 @@ void nkhMain(path inVid, path inFile, path outDir)
         if(maybeImshow("Smooth", edgeSmooth)=='q')
             break;
         */
-        
-        //SaliencyMap
-        Mat saliency;
-        computeSaliency(frameResized_gray, saliency);
-        Mat masked, binMask;
-        saliency = saliency * 3;
-        saliency.convertTo( saliency, CV_8U );
-        // adaptative thresholding using Otsu's method, to make saliency map binary
-        threshold( saliency, binMask, 0, 255, THRESH_BINARY | THRESH_OTSU );
-        frameResized.copyTo(masked, binMask);
-        //maybeImshow("orig", frameResized);
-        maybeImshow("Saliency", masked);
 
         //threshold
 
