@@ -54,12 +54,12 @@ string fpsCalcEnd()
 /*----------------- nkhEnd: FPS counter -----------------*/
 
 /******************** nkhStart opencv wrappers ********************/
-void nkhImshow(const char* windowName, cv::Mat img)
+void nkhImshow(const char* windowName, cv::Mat& img)
 {
     imshow(windowName, img);
 }
 
-char maybeImshow(const char* windowName, cv::Mat img, int waitKeyTime=10)
+char maybeImshow(const char* windowName, cv::Mat& img, int waitKeyTime=10)
 {
     if(WITH_VISUALIZATION)
     {
@@ -198,7 +198,7 @@ void domainTransformFilter(cv::Mat& img, cv::Mat& out, cv::Mat& joint, double si
 /*------------------- nkhEnd domainTransform -------------------*/
 
 /******************** nkhStart Saliency ********************/
-void computeSaliency(cv::Mat imgGray, cv::Mat& saliencyMap)
+void computeSaliency(cv::Mat& imgGray, cv::Mat& saliencyMap)
 {
     Mat grayDown;
     std::vector<Mat> mv;
@@ -263,10 +263,12 @@ void computeSaliency(cv::Mat imgGray, cv::Mat& saliencyMap)
 }
 /*------------------- nkhEnd Saliency -------------------*/
 
+void evaluateMasked(cv::Mat& masked, map<int, FrameObjects>& groundTruth, int frameNum);
+
 //void nkhTest();
 void cropGroundTruth(VideoCapture cap, path inFile, path outDir);
 
-map<int, FrameObjects> parseFile(path inFile);
+void parseFile(path inFile, map<int, FrameObjects>& outMap);
 
 int main(int argc, char *argv[])
 {
@@ -305,6 +307,10 @@ void nkhMain(path inVid, path inFile, path outDir)
     //task1 : cropGroundTruth(VideoCapture cap, path inFile, path outDir)
     //task1 is done, ran once.
     
+    //Task 1.5: open the map for evaluation
+    map<int, FrameObjects> groundTruth;
+    parseFile(inFile, groundTruth);
+
     //task2: resize and preproc.
     Mat currentFrame;
     int frameCount = 0;
@@ -338,7 +344,8 @@ void nkhMain(path inVid, path inFile, path outDir)
         threshold( saliency, binMask, 0, 255, THRESH_BINARY | THRESH_OTSU );
         frameResized.copyTo(masked, binMask);
         //maybeImshow("orig", frameResized);
-        if(maybeImshow("Saliency", masked) == 'q') break;
+        //if(maybeImshow("Saliency", masked) == 'q') break;
+
         /*
         if(maybeImshow("resized orig", frameResized)=='q')
             break;
@@ -354,7 +361,7 @@ void nkhMain(path inVid, path inFile, path outDir)
         //threshold
 
         //evaluate Correlation
-        
+        evaluateMasked(masked, groundTruth, frameCount);
         //contour appx
         
         fpsCalcEnd();
@@ -362,6 +369,19 @@ void nkhMain(path inVid, path inFile, path outDir)
         frameCount++;
     }
     return;
+}
+
+void evaluateMasked(cv::Mat& masked, map<int, FrameObjects>& groundTruth, int frameNum)
+{
+    map<int, FrameObjects>::iterator it = groundTruth.find(frameNum);
+        if(it != groundTruth.end())
+        {
+            FrameObjects tmpFrameObj = it->second;
+            for(int i=0 ; i < tmpFrameObj.getObjs().size(); i++)
+            {
+                cout<< tmpFrameObj.getObjs().at(i).getName() <<  endl;
+            }
+        }
 }
 
 void edgeAwareSmooth(cv::Mat img, Mat &dst)
@@ -404,7 +424,8 @@ void cropGroundTruth(VideoCapture cap, path inFile, path outDir)
     }
     */
     
-    map<int, FrameObjects> vidObjects = parseFile(inFile);
+    map<int, FrameObjects> vidObjects;
+    parseFile(inFile, vidObjects);
     Mat currentframe;
     int frameCount = 0;
     while (true) {
@@ -436,10 +457,8 @@ void cropGroundTruth(VideoCapture cap, path inFile, path outDir)
     }
 }
 
-map<int, FrameObjects> parseFile(path inFile)
+void parseFile(path inFile, map<int, FrameObjects>& theMap)
 {
-    map<int, FrameObjects> theMap;
-    
     //Open the merged annotation file and parse to map
     ifstream txtFile(inFile.string());
     if(txtFile.is_open())
@@ -453,7 +472,6 @@ map<int, FrameObjects> parseFile(path inFile)
         }
         txtFile.close();
     }
-    return theMap;
 }
 
 /*
