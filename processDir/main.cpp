@@ -1,9 +1,9 @@
 #include <QCoreApplication>
-#include <opencv/cv.hpp>
+#include <opencv/cv.h>
 #include <opencv2/core.hpp>
-#include <opencv2/highgui.hpp>
-#include <opencv2/cudaarithm.hpp>
-#include <opencv2/cudawarping.hpp>
+#include <opencv2/highgui/highgui.hpp>
+//#include <opencv2/cudaarithm.hpp>
+//#include <opencv2/cudawarping.hpp>
 
 using namespace cv;
 #include <fstream>
@@ -324,15 +324,22 @@ void nkhMain(path inVid, path inFile, path outDir)
 
         //SaliencyMap
         Mat saliency;
+        //
+        //Mat edgeSmooth;
+        //edgeAwareSmooth(frameResized, edgeSmooth);
+        //edgeSmooth.convertTo(edgeSmooth, CV_32F);
+        //cvtColor(edgeSmooth, frameResized_gray, COLOR_BGR2GRAY);
+        //
+        //blur(frameResized_gray, frameResized_gray, Size(10,10));
         computeSaliency(frameResized_gray, saliency);
         Mat masked, binMask;
-        saliency = saliency * 3;
+        saliency = saliency * 10;
         saliency.convertTo( saliency, CV_8U );
         // adaptative thresholding using Otsu's method, to make saliency map binary
         threshold( saliency, binMask, 0, 255, THRESH_BINARY | THRESH_OTSU );
         frameResized.copyTo(masked, binMask);
         //maybeImshow("orig", frameResized);
-        //maybeImshow("Saliency", masked);
+        if(maybeImshow("Saliency", masked) == 'q') break;
 
         /*
         if(maybeImshow("resized orig", frameResized)=='q')
