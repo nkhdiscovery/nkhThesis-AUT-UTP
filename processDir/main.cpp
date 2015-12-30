@@ -18,11 +18,11 @@ using namespace std;
 #define DOMAIN_SIGMA_S 37.0
 #define DOMAIN_SIGMA_R 1.8
 #define DOMAIN_MAX_ITER 3
-/****************** nkhEnd: global vars and defs ******************/
+/*----------------- nkhEnd: global vars and defs -----------------*/
 
 void nkhMain(path inVid, path inFile, path outDir);
 
-/************************* nkhStart: FPS counter *************************/
+/****************** nkhStart: FPS counter ******************/
 //TODO: implement as a template
 time_t timerStart, timerEnd;
 int timerCounter = 0;
@@ -51,7 +51,7 @@ string fpsCalcEnd()
         timerCounter = 0;
     return string(fpsString);
 }
-/************************* nkhEnd: FPS counter *************************/
+/*----------------- nkhEnd: FPS counter -----------------*/
 
 /******************** nkhStart opencv wrappers ********************/
 void nkhImshow(const char* windowName, cv::Mat img)
@@ -69,7 +69,7 @@ char maybeImshow(const char* windowName, cv::Mat img, int waitKeyTime=10)
     return 0;
 }
 
-/******************** nkhEnd opencv wrappers ********************/
+/*------------------- nkhEnd opencv wrappers -------------------*/
 
 /******************** nkhStart domainTransform ********************/
 // Recursive filter for vertical direction
@@ -154,6 +154,7 @@ void recursiveFilterHorizontal(cv::Mat& out, cv::Mat& dct, double sigma_H) {
 
 // Domain transform filtering
 void domainTransformFilter(cv::Mat& img, cv::Mat& out, cv::Mat& joint, double sigma_s, double sigma_r, int maxiter) {
+
     assert(img.depth() == CV_64F && joint.depth() == CV_64F);
     
     int width = img.cols;
@@ -194,7 +195,7 @@ void domainTransformFilter(cv::Mat& img, cv::Mat& out, cv::Mat& joint, double si
         recursiveFilterVertical(out, dcty, sigma_H);
     }
 }
-/******************** nkhEnd domainTransform ********************/
+/*------------------- nkhEnd domainTransform -------------------*/
 
 /******************** nkhStart Saliency ********************/
 void computeSaliency(cv::Mat imgGray, cv::Mat& saliencyMap)
@@ -260,9 +261,7 @@ void computeSaliency(cv::Mat imgGray, cv::Mat& saliencyMap)
     //imshow( "Saliency Map Interna", saliencyMap );
 
 }
-
-/******************** nkhEnd Saliency ********************/
-void edgeAwareSmooth(cv::Mat img, cv::Mat& dst);
+/*------------------- nkhEnd Saliency -------------------*/
 
 //void nkhTest();
 void cropGroundTruth(VideoCapture cap, path inFile, path outDir);
@@ -324,6 +323,13 @@ void nkhMain(path inVid, path inFile, path outDir)
 
         //SaliencyMap
         Mat saliency;
+        //
+        //Mat edgeSmooth;
+        //edgeAwareSmooth(frameResized, edgeSmooth);
+        //edgeSmooth.convertTo(edgeSmooth, CV_32F);
+        //cvtColor(edgeSmooth, frameResized_gray, COLOR_BGR2GRAY);
+        //
+        //blur(frameResized_gray, frameResized_gray, Size(10,10));
         computeSaliency(frameResized_gray, saliency);
         Mat masked, binMask;
         saliency = saliency * 3;
@@ -332,8 +338,7 @@ void nkhMain(path inVid, path inFile, path outDir)
         threshold( saliency, binMask, 0, 255, THRESH_BINARY | THRESH_OTSU );
         frameResized.copyTo(masked, binMask);
         //maybeImshow("orig", frameResized);
-        //maybeImshow("Saliency", masked);
-
+        if(maybeImshow("Saliency", masked) == 'q') break;
         /*
         if(maybeImshow("resized orig", frameResized)=='q')
             break;
