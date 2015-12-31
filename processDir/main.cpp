@@ -410,6 +410,7 @@ void nkhMain(path inVid, path inFile, path outDir)
 void evaluateMasked(cv::Mat& binMask, map<int, FrameObjects>& groundTruth, int frameNum, vector<double>& result) //binMask should be binary
 {
     map<int, FrameObjects>::iterator it = groundTruth.find(frameNum);
+
     if(it != groundTruth.end())
     {
         FrameObjects tmpFrameObj = it->second;

@@ -11,8 +11,9 @@ do
 done 
 
 if [ $objects -le 1 ]; then
-    cp "$1" "$1".cpy
-    join -a1 -a2 -j 11 "$1" "$1".cpy  | cut -d ' ' -f1-13 > "$1".merged
+    cat "$1" | cut -f11 > ./"$1".1.tmp
+    cat "$1" | cut -f2-10,12,13 > ./"$1".2.tmp
+    paste ./"$1".1.tmp ./"$1".2.tmp > "$1".merged
 else
     ./recJoin.sh nkhTmpNoHead/*.nkhtmp | sort -n -k 1,1 > "$1".merged
 fi
