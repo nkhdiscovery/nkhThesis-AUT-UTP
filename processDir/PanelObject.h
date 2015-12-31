@@ -4,6 +4,14 @@
 #include <opencv2/core.hpp>
 #include <cstring>
 
+#define PANEL_CATEGORY "Panel"
+#define PANEL_TYPE_ABOVE "Above"
+#define PANEL_TYPE_SIDE "Side"
+
+#define TEXT_CATEGORY "Text"
+#define TEXT_TYPE_PERSIAN "Persian"
+#define TEXT_TYPE_ENGLISH "English"
+
 //TODO
 // Object panels are considered to be rectangle
 

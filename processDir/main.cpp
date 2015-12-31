@@ -4,8 +4,12 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/cudaarithm.hpp>
 #include <opencv2/cudawarping.hpp>
-
 using namespace cv;
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics/stats.hpp>
+#include <boost/accumulators/statistics/mean.hpp>
+#include <boost/accumulators/statistics/variance.hpp>
+using namespace boost::accumulators;
 #include <fstream>
 #include <map>
 using namespace std;
@@ -274,7 +278,16 @@ void computeSaliency(cv::Mat& imgGray, cv::Mat& saliencyMap)
 }
 /*------------------- nkhEnd Saliency -------------------*/
 
-void evaluateMasked(cv::Mat& masked, map<int, FrameObjects>& groundTruth, int frameNum);
+void evaluateMasked(cv::Mat& masked, map<int, FrameObjects>& groundTruth, int frameNum, vector<double>& result);
+void calcMeanVar(vector<double>& result)
+{
+    double sum = std::accumulate(result.begin(), result.end(), 0.0);
+    double mean = sum / result.size();
+
+    double sq_sum = std::inner_product(result.begin(), result.end(), result.begin(), 0.0);
+    double stdev = std::sqrt(sq_sum / result.size() - mean * mean);
+    cout << "Mean is " << mean << ", stdev is: " << stdev << endl;
+}
 
 //void nkhTest();
 void cropGroundTruth(VideoCapture cap, path inFile, path outDir);
@@ -326,6 +339,7 @@ void nkhMain(path inVid, path inFile, path outDir)
     Mat currentFrame;
     int frameCount = 0;
     initFPSTimer();
+    vector<double> evaluationResult;
     while(true)
     {
         cap >> currentFrame;
@@ -372,8 +386,8 @@ void nkhMain(path inVid, path inFile, path outDir)
         //threshold
 
         //evaluate Correlation
-        evaluateMasked(masked, groundTruth, frameCount);
-        char controlChar = maybeImshow("Saliency", masked) ;
+        evaluateMasked(binMask, groundTruth, frameCount, evaluationResult);
+        char controlChar = maybeImshow("Saliency", binMask) ;
         if (controlChar == 'q')
         {
             break;
@@ -389,24 +403,26 @@ void nkhMain(path inVid, path inFile, path outDir)
         //cout<< timerFPS << endl;
         frameCount++;
     }
+    calcMeanVar(evaluationResult);
     return;
 }
 
-void evaluateMasked(cv::Mat& masked, map<int, FrameObjects>& groundTruth, int frameNum)
+void evaluateMasked(cv::Mat& binMask, map<int, FrameObjects>& groundTruth, int frameNum, vector<double>& result) //binMask should be binary
 {
     map<int, FrameObjects>::iterator it = groundTruth.find(frameNum);
-        if(it != groundTruth.end())
+    if(it != groundTruth.end())
+    {
+        FrameObjects tmpFrameObj = it->second;
+        for(unsigned int i=0 ; i < tmpFrameObj.getObjs().size(); i++)
         {
-            FrameObjects tmpFrameObj = it->second;
-            for(unsigned int i=0 ; i < tmpFrameObj.getObjs().size(); i++)
-            {
-                //cout<< frameNum << " : " << tmpFrameObj.getObjs().at(i).getName() <<  endl;
-                Rect tmpBorder = tmpFrameObj.getObjs().at(i).getBorder();
-                resizeAntRecFrom1080(tmpBorder);
-                rectangle(masked, tmpBorder, Scalar(0, 255, 0));
-                cout << tmpFrameObj.getObjs().at(i).getBorder() << endl;
-            }
+            if(tmpFrameObj.getObjs().at(i).getCategory() != PANEL_CATEGORY )
+                continue;
+            Rect tmpBorder = tmpFrameObj.getObjs().at(i).getBorder();
+            resizeAntRecFrom1080(tmpBorder);
+            result.push_back((double)countNonZero(binMask(tmpBorder))/tmpBorder.area());
+            rectangle(binMask, tmpBorder, Scalar(0, 255, 0));
         }
+    }
 }
 
 void edgeAwareSmooth(cv::Mat img, Mat &dst)
