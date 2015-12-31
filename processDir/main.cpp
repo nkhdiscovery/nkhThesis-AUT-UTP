@@ -15,9 +15,20 @@ using namespace std;
 
 /****************** nkhStart: global vars and defs ******************/
 #define RESIZE_FACTOR 5
+#define _1080_x 1920
+#define _1080_y 1080
+#define _720_x 1280
+#define _720_y 720
+
+#define resizeAntRecFrom1080(rec) {rec.x /= RESIZE_FACTOR/1.5;\
+    rec.y /= RESIZE_FACTOR/1.5;\
+    rec.width /= RESIZE_FACTOR/1.5;\
+    rec.height /= RESIZE_FACTOR/1.5;\
+    } //1.5 cuz of 1080p to 720p annotation
 #define DOMAIN_SIGMA_S 37.0
 #define DOMAIN_SIGMA_R 1.8
 #define DOMAIN_MAX_ITER 3
+
 /*----------------- nkhEnd: global vars and defs -----------------*/
 
 void nkhMain(path inVid, path inFile, path outDir);
@@ -362,10 +373,20 @@ void nkhMain(path inVid, path inFile, path outDir)
 
         //evaluate Correlation
         evaluateMasked(masked, groundTruth, frameCount);
+        char controlChar = maybeImshow("Saliency", masked) ;
+        if (controlChar == 'q')
+        {
+            break;
+        }
+        else if (controlChar == 'p')
+        {
+            while (cvWaitKey(10) != 'p');
+        }
+
         //contour appx
         
         fpsCalcEnd();
-        cout<< timerFPS << endl;
+        //cout<< timerFPS << endl;
         frameCount++;
     }
     return;
@@ -377,9 +398,13 @@ void evaluateMasked(cv::Mat& masked, map<int, FrameObjects>& groundTruth, int fr
         if(it != groundTruth.end())
         {
             FrameObjects tmpFrameObj = it->second;
-            for(int i=0 ; i < tmpFrameObj.getObjs().size(); i++)
+            for(unsigned int i=0 ; i < tmpFrameObj.getObjs().size(); i++)
             {
-                cout<< tmpFrameObj.getObjs().at(i).getName() <<  endl;
+                //cout<< frameNum << " : " << tmpFrameObj.getObjs().at(i).getName() <<  endl;
+                Rect tmpBorder = tmpFrameObj.getObjs().at(i).getBorder();
+                resizeAntRecFrom1080(tmpBorder);
+                rectangle(masked, tmpBorder, Scalar(0, 255, 0));
+                cout << tmpFrameObj.getObjs().at(i).getBorder() << endl;
             }
         }
 }
@@ -437,7 +462,7 @@ void cropGroundTruth(VideoCapture cap, path inFile, path outDir)
         if(it != vidObjects.end())
         {
             FrameObjects tmpFrameObj = it->second;
-            for(int i=0 ; i < tmpFrameObj.getObjs().size(); i++)
+            for(unsigned int i=0 ; i < tmpFrameObj.getObjs().size(); i++)
             {
                 cv::Rect tmpBorder(tmpFrameObj.getObjs().at(i).getBorder());
                 //Scale ROI! annotation is done in 720p, the input is 1080p
