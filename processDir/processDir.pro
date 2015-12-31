@@ -13,20 +13,32 @@ LIBS += -lopencv_highgui -lopencv_videoio -lopencv_photo -lopencv_imgcodecs -lop
 LIBS += -lopencv_cudafilters -lopencv_video -lopencv_ml -lopencv_imgproc -lopencv_flann -lopencv_cudaarithm
 LIBS += -lopencv_core -lopencv_hal -lopencv_cudev
 
-QMAKE_CXXFLAGS += -std=c++11 -Wall -O3
+QMAKE_CXXFLAGS += -std=c++11 -Wall -O3 -march=corei7-avx
 QMAKE_LFLAGS += -fopenmp -pthread
 
-INCLUDEPATH +=  -I/usr/local/include/opencv -I/usr/local/include
+INCLUDEPATH +=  -I/usr/local/include/opencv -I/usr/local/include 3rd/ 3rd/external
 
 DEFINES += "WITH_CUDA=1"
 DEFINES += "WITH_VISUALIZATION=1"
 
+#Start FOR DTF fast code
+DEFINES += DO_FUNCTION_PROFILING
+QMAKE_CXXFLAGS_RELEASE += -fno-tree-vectorize
+QMAKE_CXXFLAGS_DEBUG += -fno-tree-vectorize
+QMAKE_CXXFLAGS += -fno-tree-vectorize
+LIBS+= -lpng
+
+#End FOR DTF fast code
+
 TEMPLATE = app
 
-SOURCES += main.cpp
+SOURCES += main.cpp \
+    guidedfilter.cpp
+
 
 HEADERS += \
     nkhUtil.h \
     FrameObjects.h \
-    PanelObject.h
+    PanelObject.h \
+    guidedfilter.h
 

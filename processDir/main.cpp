@@ -4,6 +4,7 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/cudaarithm.hpp>
 #include <opencv2/cudawarping.hpp>
+
 using namespace cv;
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
@@ -16,9 +17,10 @@ using namespace std;
 
 #include "nkhUtil.h"
 #include "FrameObjects.h"
+#include "guidedfilter.h"
 
 /****************** nkhStart: global vars and defs ******************/
-#define RESIZE_FACTOR 5
+#define RESIZE_FACTOR 6
 #define _1080_x 1920
 #define _1080_y 1080
 #define _720_x 1280
@@ -29,8 +31,8 @@ using namespace std;
     rec.width /= RESIZE_FACTOR/1.5;\
     rec.height /= RESIZE_FACTOR/1.5;\
     } //1.5 cuz of 1080p to 720p annotation
-#define DOMAIN_SIGMA_S 37.0
-#define DOMAIN_SIGMA_R 1.8
+#define DOMAIN_SIGMA_S 10.0
+#define DOMAIN_SIGMA_R 1.0
 #define DOMAIN_MAX_ITER 3
 
 /*----------------- nkhEnd: global vars and defs -----------------*/
@@ -364,7 +366,7 @@ void nkhMain(path inVid, path inFile, path outDir)
     Mat currentFrame;
     int frameCount = 0;
     initFPSTimer();
-    vector<double> evaluationResult;
+    vector<double> evalSaliency;
     while(true)
     {
         cap >> currentFrame;
@@ -377,15 +379,17 @@ void nkhMain(path inVid, path inFile, path outDir)
                                              currentFrame.size().height/RESIZE_FACTOR));
         cvtColor(frameResized, frameResized_gray, COLOR_BGR2GRAY);
 
+
         //SaliencyMap
         Mat saliency;
-        //
+        /*
         //Mat edgeSmooth;
         //edgeAwareSmooth(frameResized, edgeSmooth);
         //edgeSmooth.convertTo(edgeSmooth, CV_32F);
         //cvtColor(edgeSmooth, frameResized_gray, COLOR_BGR2GRAY);
-        //
+        */
         //blur(frameResized_gray, frameResized_gray, Size(10,10));
+        /*
         computeSaliency(frameResized_gray, saliency);
         Mat masked, binMask;
         saliency = saliency * 3;
@@ -395,6 +399,7 @@ void nkhMain(path inVid, path inFile, path outDir)
         frameResized.copyTo(masked, binMask);
         //maybeImshow("orig", frameResized);
         //if(maybeImshow("Saliency", masked) == 'q') break;
+        */
 
         /*
         if(maybeImshow("resized orig", frameResized)=='q')
@@ -402,17 +407,23 @@ void nkhMain(path inVid, path inFile, path outDir)
             */
         //TODO: implement with GPU
         //Mat edgeSmooth = measure<std::chrono::milliseconds>(edgeAwareSmooth, frameResized);
-
         Mat edgeSmooth;
         edgeAwareSmooth(frameResized, edgeSmooth);
-        //if(maybeImshow("Smooth", edgeSmooth)=='q')
-        //    break;
+/*
+        cv::Mat p = frameResized;
 
+        int r = 4; // try r=2, 4, or 8
+        double eps = 0.4 * 0.4; // try eps=0.1^2, 0.2^2, 0.4^2
 
+        eps *= 255 * 255;   // Because the intensity range of our images is [0, 255]
+
+        edgeSmooth = guidedFilter(frameResized, p, r, eps);
+*/
         //threshold
 
+        /*
         //evaluate Correlation
-        evaluateMasked(binMask, groundTruth, frameCount, evaluationResult);
+        evaluateMasked(binMask, groundTruth, frameCount, evalSaliency);
         char controlChar = maybeImshow("Saliency", binMask) ;
         if (controlChar == 'q')
         {
@@ -422,31 +433,44 @@ void nkhMain(path inVid, path inFile, path outDir)
         {
             while (cvWaitKey(10) != 'p');
         }
-
+        */
         //contour appx
         
-        fpsCalcEnd();
-        //cout<< timerFPS << endl;
-        frameCount++;
 
+        //Visualize
+        /*
+        char controlChar = maybeImshow("smooth", edgeSmooth) ;
+        if (controlChar == 'q')
+        {
+            break;
+        }
+        else if (controlChar == 'p')
+        {
+            while (cvWaitKey(10) != 'p');
+        }
+        */
+
+        fpsCalcEnd();
+        cout<< timerFPS << endl;
+        frameCount++;
 
         //Handle Memory
         frameResized.release();
         frameResized_gray.release();
         saliency.release();
-        masked.release();
-        binMask.release();
+//        masked.release();
+//        binMask.release();
         edgeSmooth.release();
         //Free to go
 
     }
-    calcMeanVar(evaluationResult);
+    calcMeanVar(evalSaliency);
 
     //Handle Memory
     cap.release();
     currentFrame.release();
     groundTruth.clear();
-    evaluationResult.clear();
+    evalSaliency.clear();
     //Free to Go!
 
     return;
