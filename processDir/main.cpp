@@ -402,8 +402,26 @@ void nkhMain(path inVid, path inFile, path outDir)
         fpsCalcEnd();
         //cout<< timerFPS << endl;
         frameCount++;
+
+        /*
+        //Handle Memory
+        frameResized.release();
+        frameResized_gray.release();
+        saliency.release();
+        masked.release();
+        binMask.release();
+        //Free to go
+        */
     }
     calcMeanVar(evaluationResult);
+
+    //Handle Memory
+    cap.release();
+    currentFrame.release();
+    groundTruth.clear();
+    evaluationResult.clear();
+    //Free to Go!
+
     return;
 }
 
