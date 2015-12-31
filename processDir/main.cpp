@@ -125,6 +125,9 @@ void recursiveFilterVertical(cv::Mat& out, cv::Mat& dct, double sigma_H) {
             }
         }
     }
+
+    //Handle Memory
+    V.release();
 }
 
 // Recursive filter for horizontal direction
@@ -165,6 +168,9 @@ void recursiveFilterHorizontal(cv::Mat& out, cv::Mat& dct, double sigma_H) {
             }
         }
     }
+
+    //Handle Memory
+    V.release();
 }
 
 // Domain transform filtering
@@ -209,7 +215,12 @@ void domainTransformFilter(cv::Mat& img, cv::Mat& out, cv::Mat& joint, double si
         recursiveFilterHorizontal(out, dctx, sigma_H);
         recursiveFilterVertical(out, dcty, sigma_H);
     }
+
+    //Handle Memory
+    dctx.release();
+    dcty.release();
 }
+void edgeAwareSmooth(cv::Mat& img, Mat &dst);
 /*------------------- nkhEnd domainTransform -------------------*/
 
 /******************** nkhStart Saliency ********************/
@@ -274,6 +285,20 @@ void computeSaliency(cv::Mat& imgGray, cv::Mat& saliencyMap)
     
     // visualize saliency map
     //imshow( "Saliency Map Interna", saliencyMap );
+
+    //Handle Memory
+    grayDown.release();
+    mv.clear();
+    realImage.release();
+    imaginaryImage.release();
+    combinedImage.release();
+    imageDFT.release();
+    logAmplitude.release();
+    angle.release();
+    magnitude.release();
+    logAmplitude_blur.release();
+    imageGR.release();
+    //Free to go
 
 }
 /*------------------- nkhEnd Saliency -------------------*/
@@ -377,11 +402,12 @@ void nkhMain(path inVid, path inFile, path outDir)
             */
         //TODO: implement with GPU
         //Mat edgeSmooth = measure<std::chrono::milliseconds>(edgeAwareSmooth, frameResized);
-        /*
-        Mat edgeSmooth = edgeAwareSmooth(frameResized);
-        if(maybeImshow("Smooth", edgeSmooth)=='q')
-            break;
-        */
+
+        Mat edgeSmooth;
+        edgeAwareSmooth(frameResized, edgeSmooth);
+        //if(maybeImshow("Smooth", edgeSmooth)=='q')
+        //    break;
+
 
         //threshold
 
@@ -403,15 +429,16 @@ void nkhMain(path inVid, path inFile, path outDir)
         //cout<< timerFPS << endl;
         frameCount++;
 
-        /*
+
         //Handle Memory
         frameResized.release();
         frameResized_gray.release();
         saliency.release();
         masked.release();
         binMask.release();
+        edgeSmooth.release();
         //Free to go
-        */
+
     }
     calcMeanVar(evaluationResult);
 
@@ -444,7 +471,7 @@ void evaluateMasked(cv::Mat& binMask, map<int, FrameObjects>& groundTruth, int f
     }
 }
 
-void edgeAwareSmooth(cv::Mat img, Mat &dst)
+void edgeAwareSmooth(Mat &img, Mat &dst)
 {
     // change depth
     img.convertTo(img, CV_64FC3, 1.0 / 255.0);
@@ -515,6 +542,11 @@ void cropGroundTruth(VideoCapture cap, path inFile, path outDir)
             break;
         frameCount++;
     }
+
+    //Handle Memory
+    currentframe.release();
+    cap.release();
+    //Free to go
 }
 
 void parseFile(path inFile, map<int, FrameObjects>& theMap)
