@@ -5,7 +5,7 @@
 #include <opencv2/cudaarithm.hpp>
 #include <opencv2/cudawarping.hpp>
 
-using namespace cv;
+//using namespace cv;
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
 #include <boost/accumulators/statistics/mean.hpp>
@@ -13,11 +13,21 @@ using namespace cv;
 using namespace boost::accumulators;
 #include <fstream>
 #include <map>
-using namespace std;
+//using namespace std;
 
 #include "nkhUtil.h"
 #include "FrameObjects.h"
+
+//Edge aware smoothings
 #include "guidedfilter.h"
+
+//3rd dtf
+#include "tclap/CmdLine.h"
+#include "Image.h"
+#include "rdtsc.h"
+#include "FunctionProfiling.h"
+#include "NC.h"
+#include "RF.h"
 
 /****************** nkhStart: global vars and defs ******************/
 #define RESIZE_FACTOR 6
@@ -34,6 +44,7 @@ using namespace std;
 #define DOMAIN_SIGMA_S 10.0
 #define DOMAIN_SIGMA_R 1.0
 #define DOMAIN_MAX_ITER 3
+#define DTF_METHOD "NC"
 
 /*----------------- nkhEnd: global vars and defs -----------------*/
 
@@ -222,34 +233,34 @@ void domainTransformFilter(cv::Mat& img, cv::Mat& out, cv::Mat& joint, double si
     dctx.release();
     dcty.release();
 }
-void edgeAwareSmooth(cv::Mat& img, Mat &dst);
+void edgeAwareSmooth(cv::Mat& img, cv::Mat &dst);
 /*------------------- nkhEnd domainTransform -------------------*/
 
 /******************** nkhStart Saliency ********************/
 void computeSaliency(cv::Mat& imgGray, cv::Mat& saliencyMap)
 {
-    Mat grayDown;
-    std::vector<Mat> mv;
-    Size resizedImageSize( 64, 64 );
+    cv::Mat grayDown;
+    std::vector<cv::Mat> mv;
+    cv::Size resizedImageSize( 64, 64 );
     
-    Mat realImage( resizedImageSize, CV_64F );
-    Mat imaginaryImage( resizedImageSize, CV_64F );
+    cv::Mat realImage( resizedImageSize, CV_64F );
+    cv::Mat imaginaryImage( resizedImageSize, CV_64F );
     imaginaryImage.setTo( 0 );
-    Mat combinedImage( resizedImageSize, CV_64FC2 );
-    Mat imageDFT;
-    Mat logAmplitude;
-    Mat angle( resizedImageSize, CV_64F );
-    Mat magnitude( resizedImageSize, CV_64F );
-    Mat logAmplitude_blur, imageGR;
+    cv::Mat combinedImage( resizedImageSize, CV_64FC2 );
+    cv::Mat imageDFT;
+    cv::Mat logAmplitude;
+    cv::Mat angle( resizedImageSize, CV_64F );
+    cv::Mat magnitude( resizedImageSize, CV_64F );
+    cv::Mat logAmplitude_blur, imageGR;
     
     if( imgGray.channels() == 3 )
     {
-        cvtColor( imgGray, imageGR, COLOR_BGR2GRAY );
-        resize( imageGR, grayDown, resizedImageSize, 0, 0, INTER_LINEAR );
+        cv::cvtColor( imgGray, imageGR, cv::COLOR_BGR2GRAY );
+        cv::resize( imageGR, grayDown, resizedImageSize, 0, 0, cv::INTER_LINEAR );
     }
     else
     {
-        resize( imgGray, grayDown, resizedImageSize, 0, 0, INTER_LINEAR );
+        cv::resize( imgGray, grayDown, resizedImageSize, 0, 0, cv::INTER_LINEAR );
     }
     
     grayDown.convertTo( realImage, CV_64F );
@@ -257,24 +268,24 @@ void computeSaliency(cv::Mat& imgGray, cv::Mat& saliencyMap)
     mv.push_back( realImage );
     mv.push_back( imaginaryImage );
     merge( mv, combinedImage );
-    dft( combinedImage, imageDFT );
+    cv::dft( combinedImage, imageDFT );
     split( imageDFT, mv );
     
     //-- Get magnitude and phase of frequency spectrum --//
     cartToPolar( mv.at( 0 ), mv.at( 1 ), magnitude, angle, false );
     log( magnitude, logAmplitude );
     //-- Blur log amplitude with averaging filter --//
-    blur( logAmplitude, logAmplitude_blur, Size( 3, 3 ), Point( -1, -1 ), BORDER_DEFAULT );
+    cv::blur( logAmplitude, logAmplitude_blur, cv::Size( 3, 3 ), cv::Point( -1, -1 ), cv::BORDER_DEFAULT );
     
     exp( logAmplitude - logAmplitude_blur, magnitude );
     //-- Back to cartesian frequency domain --//
     polarToCart( magnitude, angle, mv.at( 0 ), mv.at( 1 ), false );
     merge( mv, imageDFT );
-    dft( imageDFT, combinedImage, DFT_INVERSE );
+    cv::dft( imageDFT, combinedImage, cv::DFT_INVERSE );
     split( combinedImage, mv );
     
     cartToPolar( mv.at( 0 ), mv.at( 1 ), magnitude, angle, false );
-    GaussianBlur( magnitude, magnitude, Size( 5, 5 ), 8, 0, BORDER_DEFAULT );
+    cv::GaussianBlur( magnitude, magnitude, cv::Size( 5, 5 ), 8, 0, cv::BORDER_DEFAULT );
     magnitude = magnitude.mul( magnitude );
     
     double minVal, maxVal;
@@ -283,13 +294,15 @@ void computeSaliency(cv::Mat& imgGray, cv::Mat& saliencyMap)
     magnitude = magnitude / maxVal;
     magnitude.convertTo( magnitude, CV_32F );
     
-    resize( magnitude, saliencyMap, imgGray.size(), 0, 0, INTER_LINEAR );
+    cv::resize( magnitude, saliencyMap, imgGray.size(), 0, 0, cv::INTER_LINEAR );
     
     // visualize saliency map
     //imshow( "Saliency Map Interna", saliencyMap );
 
     //Handle Memory
     grayDown.release();
+    for (unsigned int i = 0 ; i < mv.size() ; i++)
+        mv[i].release();
     mv.clear();
     realImage.release();
     imaginaryImage.release();
@@ -317,7 +330,7 @@ void calcMeanVar(vector<double>& result)
 }
 
 //void nkhTest();
-void cropGroundTruth(VideoCapture cap, path inFile, path outDir);
+void cropGroundTruth(cv::VideoCapture cap, path inFile, path outDir);
 
 void parseFile(path inFile, map<int, FrameObjects>& outMap);
 
@@ -352,7 +365,7 @@ int main(int argc, char *argv[])
 void nkhMain(path inVid, path inFile, path outDir)
 {
     //Open the video file
-    VideoCapture cap(inVid.string());
+    cv::VideoCapture cap(inVid.string());
     
     //TODO: parse commandline arguments for different tasks
     //task1 : cropGroundTruth(VideoCapture cap, path inFile, path outDir)
@@ -363,7 +376,7 @@ void nkhMain(path inVid, path inFile, path outDir)
     parseFile(inFile, groundTruth);
 
     //task2: resize and preproc.
-    Mat currentFrame;
+    cv::Mat currentFrame;
     int frameCount = 0;
     initFPSTimer();
     vector<double> evalSaliency;
@@ -374,14 +387,14 @@ void nkhMain(path inVid, path inFile, path outDir)
             break;
         fpsCalcStart();
         
-        Mat frameResized, frameResized_gray;
-        resize(currentFrame, frameResized, Size(currentFrame.size().width/RESIZE_FACTOR,
+        cv::Mat frameResized, frameResized_gray;
+        cv::resize(currentFrame, frameResized, cv::Size(currentFrame.size().width/RESIZE_FACTOR,
                                              currentFrame.size().height/RESIZE_FACTOR));
-        cvtColor(frameResized, frameResized_gray, COLOR_BGR2GRAY);
+        cv::cvtColor(frameResized, frameResized_gray, cv::COLOR_BGR2GRAY);
 
 
         //SaliencyMap
-        Mat saliency;
+        cv::Mat saliency;
         /*
         //Mat edgeSmooth;
         //edgeAwareSmooth(frameResized, edgeSmooth);
@@ -407,8 +420,14 @@ void nkhMain(path inVid, path inFile, path outDir)
             */
         //TODO: implement with GPU
         //Mat edgeSmooth = measure<std::chrono::milliseconds>(edgeAwareSmooth, frameResized);
-        Mat edgeSmooth;
-        edgeAwareSmooth(frameResized, edgeSmooth);
+        cv::Mat edgeSmooth;
+        Mat2<float3> img = LoadPNG(inputPath);
+        if (DTF_METHOD == "RF")
+            RF::filter(img, sigmaS, sigmaR, nIterations);
+        else if (DTF_METHOD == "NC")
+            NC::filter(img, sigmaS, sigmaR, nIterations);
+
+//        edgeAwareSmooth(frameResized, edgeSmooth);
 /*
         cv::Mat p = frameResized;
 
@@ -487,15 +506,15 @@ void evaluateMasked(cv::Mat& binMask, map<int, FrameObjects>& groundTruth, int f
         {
             if(tmpFrameObj.getObjs().at(i).getCategory() != PANEL_CATEGORY )
                 continue;
-            Rect tmpBorder = tmpFrameObj.getObjs().at(i).getBorder();
+            cv::Rect tmpBorder = tmpFrameObj.getObjs().at(i).getBorder();
             resizeAntRecFrom1080(tmpBorder);
             result.push_back((double)countNonZero(binMask(tmpBorder))/tmpBorder.area());
-            rectangle(binMask, tmpBorder, Scalar(0, 255, 0));
+            cv::rectangle(binMask, tmpBorder, cv::Scalar(0, 255, 0));
         }
     }
 }
 
-void edgeAwareSmooth(Mat &img, Mat &dst)
+void edgeAwareSmooth(cv::Mat &img, cv::Mat &dst)
 {
     // change depth
     img.convertTo(img, CV_64FC3, 1.0 / 255.0);
@@ -507,7 +526,7 @@ void edgeAwareSmooth(Mat &img, Mat &dst)
     domainTransformFilter(img, dst, img, sigma_s, sigma_r, maxiter);
 }
 
-void cropGroundTruth(VideoCapture cap, path inFile, path outDir)
+void cropGroundTruth(cv::VideoCapture cap, path inFile, path outDir)
 {
     /* //sample for find
     map<int, FrameObjects>::iterator it = vidObjects.find(139);
@@ -537,7 +556,7 @@ void cropGroundTruth(VideoCapture cap, path inFile, path outDir)
     
     map<int, FrameObjects> vidObjects;
     parseFile(inFile, vidObjects);
-    Mat currentframe;
+    cv::Mat currentframe;
     int frameCount = 0;
     while (true) {
         cap >> currentframe;

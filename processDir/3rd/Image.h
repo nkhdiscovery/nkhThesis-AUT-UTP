@@ -17,7 +17,7 @@ inline void c_free(void* ptr)
 typedef unsigned char uchar;
 typedef unsigned char uint8;
 
-using namespace std;
+//using namespace std;
 
 Mat2<float3> LoadPNG(const std::string& path)
 {

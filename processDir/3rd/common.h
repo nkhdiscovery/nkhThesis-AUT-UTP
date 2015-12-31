@@ -125,7 +125,7 @@ void transpose(Mat2<float3>& in)
     float3 tmp;
 // Code adapted from
 // http://rosettacode.org/wiki/Matrix_transposition#C
-    int start, next, i;
+    unsigned int start, next, i;
     for (start = 0; start <= W * H - 1; start++) {
         next = start;
         i = 0;
@@ -363,7 +363,7 @@ void transpose(Mat2<float>& in)
     float tmp;
 // Code adapted from
 // http://rosettacode.org/wiki/Matrix_transposition#C
-    int start, next, i;
+    unsigned int start, next, i;
     for (start = 0; start <= W * H - 1; start++) {
         next = start;
         i = 0;

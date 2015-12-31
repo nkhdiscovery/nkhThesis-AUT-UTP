@@ -65,7 +65,7 @@ namespace FunP
 #ifdef DO_FUNCTION_PROFILING
         std::cout << "'runtime_data': [" << std::endl;
         double total = Data[0].total_cycles / 100.0;
-        for (int i=0; i<N_DATA_LINES; i++)
+        for (unsigned int i=0; i<N_DATA_LINES; i++)
         {
             double cycles_call = Data[i].call_counter == 0 ? 0.0 : Data[i].total_cycles / Data[i].call_counter;
             std::cout << "{" << std::endl;

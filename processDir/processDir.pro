@@ -33,12 +33,21 @@ LIBS+= -lpng
 TEMPLATE = app
 
 SOURCES += main.cpp \
-    guidedfilter.cpp
-
+    guidedfilter.cpp \
+    3rd/external/io_png/io_png.c
 
 HEADERS += \
     nkhUtil.h \
     FrameObjects.h \
     PanelObject.h \
-    guidedfilter.h
-
+    guidedfilter.h \
+    3rd/external/tclap/CmdLine.h \
+    3rd/external/io_png/io_png.h \
+    3rd/Image.h \
+    3rd/NC.h \
+    3rd/Exception.h \
+    3rd/Mat2.h \
+    3rd/RF.h \
+    3rd/common.h\
+    3rd/rdtsc.h \
+    3rd/FunctionProfiling.h
