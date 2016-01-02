@@ -4,6 +4,10 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/cudaarithm.hpp>
 #include <opencv2/cudawarping.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/ximgproc.hpp>
+#include <opencv2/bioinspired.hpp>
+#include <opencv2/contrib/retina.hpp>
 
 //using namespace cv;
 #include <boost/accumulators/accumulators.hpp>
@@ -30,7 +34,7 @@ using namespace boost::accumulators;
 #include "RF.h"
 
 /****************** nkhStart: global vars and defs ******************/
-#define RESIZE_FACTOR 6
+#define RESIZE_FACTOR 5
 #define _1080_x 1920
 #define _1080_y 1080
 #define _720_x 1280
@@ -41,8 +45,8 @@ using namespace boost::accumulators;
     rec.width /= RESIZE_FACTOR/1.5;\
     rec.height /= RESIZE_FACTOR/1.5;\
     } //1.5 cuz of 1080p to 720p annotation
-#define DOMAIN_SIGMA_S 10.0
-#define DOMAIN_SIGMA_R 1.0
+#define DOMAIN_SIGMA_S 50
+#define DOMAIN_SIGMA_R 350
 #define DOMAIN_MAX_ITER 3
 #define DTF_METHOD "NC"
 
@@ -113,10 +117,23 @@ void mserExtractor (const cv::Mat& image, cv::Mat& mserOutMask){
     vector<cv::Rect> mserBbox;
     mserExtractor->detectRegions(image, mserContours, mserBbox);
 
-    for( int i = 0; i<mserContours.size(); i++ )
+    for(unsigned int i = 0; i<mserContours.size(); i++ )
     {
         drawContours(mserOutMask, mserContours, i, cv::Scalar(255, 255, 255), 4);
     }
+}
+
+void on_trackbarS( int, void* )
+{
+}
+void on_trackbarR( int, void* )
+{
+
+}
+//int sigmaS=0, sigmaR=0;
+void dtfWrapper(cv::Mat& in, cv::Mat& out)
+{
+    cv::ximgproc::dtFilter(in.clone(), in, out, DOMAIN_SIGMA_S, DOMAIN_SIGMA_R, cv::ximgproc::DTF_NC); //r 350. 50. nc
 }
 
 /*------------------- nkhEnd opencv -------------------*/
@@ -402,11 +419,34 @@ void nkhMain(path inVid, path inFile, path outDir)
     int frameCount = 0;
     initFPSTimer();
     vector<double> evalSaliency;
+
+
+    /*
+
+    cv::namedWindow("Smoothing S", 1);
+    cv::namedWindow("Smoothing R", 1);
+
+    //DT trackbars
+    char TrackbarNameS[50], TrackbarNameR[50];
+    sprintf( TrackbarNameS, "SigmaS: %d", sigmaS);
+    sprintf( TrackbarNameR, "SigmaR: %d", sigmaR);
+    cv::createTrackbar( TrackbarNameS, "Smoothing S", &sigmaS, 1500, on_trackbarS );
+    cv::createTrackbar( TrackbarNameR, "Smoothing R", &sigmaR, 1500, on_trackbarR );
+
+    /// Show some stuff
+    on_trackbarS( sigmaS, 0 );
+    on_trackbarR( sigmaR, 0 );
+    */
+
     while(true)
     {
         cap >> currentFrame;
         if(currentFrame.size().area() <= 0)
-            break;
+        {
+            cap.set(CV_CAP_PROP_POS_AVI_RATIO , 0);
+            continue;
+//            break;
+        }
         fpsCalcStart();
         
         cv::Mat frameResized, frameResized_gray;
@@ -424,17 +464,17 @@ void nkhMain(path inVid, path inFile, path outDir)
         //cvtColor(edgeSmooth, frameResized_gray, COLOR_BGR2GRAY);
         */
         //blur(frameResized_gray, frameResized_gray, Size(10,10));
-        /*
+
         computeSaliency(frameResized_gray, saliency);
-        Mat masked, binMask;
+        cv::Mat masked, binMask;
         saliency = saliency * 3;
         saliency.convertTo( saliency, CV_8U );
         // adaptative thresholding using Otsu's method, to make saliency map binary
-        threshold( saliency, binMask, 0, 255, THRESH_BINARY | THRESH_OTSU );
+        threshold( saliency, binMask, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU );
         frameResized.copyTo(masked, binMask);
         //maybeImshow("orig", frameResized);
-        //if(maybeImshow("Saliency", masked) == 'q') break;
-        */
+//        if(maybeImshow("Saliency", masked) == 'q') break;
+
 
         /*
         if(maybeImshow("resized orig", frameResized)=='q')
@@ -443,14 +483,9 @@ void nkhMain(path inVid, path inFile, path outDir)
         //TODO: implement with GPU
         //Mat edgeSmooth = measure<std::chrono::milliseconds>(edgeAwareSmooth, frameResized);
         cv::Mat edgeSmooth;
+        dtfWrapper(frameResized, edgeSmooth);
 
-        Mat2<float3> img = LoadPNG(inputPath);
-        if (DTF_METHOD == "RF")
-            RF::filter(img, DOMAIN_SIGMA_S, DOMAIN_SIGMA_R, DOMAIN_MAX_ITER);
-        else if (DTF_METHOD == "NC")
-            NC::filter(img, DOMAIN_SIGMA_S, DOMAIN_SIGMA_R, DOMAIN_MAX_ITER);
-
-//        edgeAwareSmooth(frameResized, edgeSmooth);
+        //edgeAwareSmooth(frameResized, edgeSmooth);
 /*
         cv::Mat p = frameResized;
 
@@ -461,12 +496,56 @@ void nkhMain(path inVid, path inFile, path outDir)
 
         edgeSmooth = guidedFilter(frameResized, p, r, eps);
 */
+
+
         //threshold
+        cv::Mat chann[3], hls, hlsChann[3];
+        cv::cvtColor(edgeSmooth, hls, CV_BGR2HLS);
+        cv::split(hls, hlsChann);
+        cv::split(edgeSmooth, chann);
+
+        cv::Mat res1 =cv::Mat::zeros(chann[0].size().width, chann[0].size().height, CV_32F);
+        cv::Mat res2=res1.clone(), res3=res1.clone(), tmp, fin;
+
+        cv::Scalar mean0 = cv::mean(chann[0]), mean1 = cv::mean(chann[1]), mean2 = cv::mean(chann[2]);
 
         /*
+        chann[0] -= mean0.val[0];
+        chann[1] -= mean1.val[0];
+        chann[2] -= mean2.val[0];
+        */
+        cv::Mat reconst;
+
+        cv::absdiff(chann[0], chann[1], res1);
+        cv::absdiff(chann[1],chann[2], res2);
+        cv::absdiff(chann[2],chann[0], res3);
+        cv::add(res1, res2, tmp);
+        cv::add(res3, tmp, tmp);
+
+        double minVal, maxVal;
+        cv::minMaxIdx(tmp, &minVal, &maxVal);
+//        cout << minVal << ", " << maxVal << " Mean: " << cv::mean(tmp) << endl ;
+
+        cv::Mat newChan[3]={res1, res2, res3};
+        cv::merge( newChan, 3, reconst);
+        cv::threshold(tmp, tmp, 65, 255, cv::THRESH_BINARY_INV);
+        fin = tmp;
+
+        fin = (hlsChann[1]>=100) & tmp;//worked
+
         //evaluate Correlation
-        evaluateMasked(binMask, groundTruth, frameCount, evalSaliency);
-        char controlChar = maybeImshow("Saliency", binMask) ;
+        //evaluateMasked(binMask, groundTruth, frameCount, evalSaliency);
+
+        /*
+        cout << res2 << endl ;
+        int t ;
+        cin >> t ;
+        */
+        cv::Mat retParvo, retMagno;
+
+        maybeImshow("Orig", edgeSmooth);
+
+        char controlChar = maybeImshow("fin", fin) ;
         if (controlChar == 'q')
         {
             break;
@@ -475,12 +554,17 @@ void nkhMain(path inVid, path inFile, path outDir)
         {
             while (cvWaitKey(10) != 'p');
         }
-        */
+        else if(controlChar == 'r')
+        {
+            cap.set(CV_CAP_PROP_POS_AVI_RATIO , 0);
+        }
+
+
         //contour appx
 
         //Visualize
-        /*
-        char controlChar = maybeImshow("smooth", edgeSmooth) ;
+/*
+        char controlChar = maybeImshow("Smooth", edgeSmooth) ;
         if (controlChar == 'q')
         {
             break;
@@ -489,7 +573,7 @@ void nkhMain(path inVid, path inFile, path outDir)
         {
             while (cvWaitKey(10) != 'p');
         }
-        */
+*/
 
         fpsCalcEnd();
         cout<< timerFPS << endl;
