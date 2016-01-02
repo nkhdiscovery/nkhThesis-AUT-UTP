@@ -81,7 +81,7 @@ string fpsCalcEnd()
 }
 /*----------------- nkhEnd: FPS counter -----------------*/
 
-/******************** nkhStart opencv wrappers ********************/
+/******************** nkhStart opencv ********************/
 void nkhImshow(const char* windowName, cv::Mat& img)
 {
     imshow(windowName, img);
@@ -97,7 +97,29 @@ char maybeImshow(const char* windowName, cv::Mat& img, int waitKeyTime=10)
     return 0;
 }
 
-/*------------------- nkhEnd opencv wrappers -------------------*/
+void matToMat2(cv::Mat& in, Mat2<float3>& out){
+    //out.data = in.data;
+}
+
+void mat2ToMat(Mat2<float3>& in, cv::Mat& out)
+{
+    out = cv::Mat(in.height, in.width, CV_32F, in.data);
+}
+
+void mserExtractor (const cv::Mat& image, cv::Mat& mserOutMask){
+    cv::Ptr<cv::MSER> mserExtractor  = cv::MSER::create();
+
+    vector<vector<cv::Point>> mserContours;
+    vector<cv::Rect> mserBbox;
+    mserExtractor->detectRegions(image, mserContours, mserBbox);
+
+    for( int i = 0; i<mserContours.size(); i++ )
+    {
+        drawContours(mserOutMask, mserContours, i, cv::Scalar(255, 255, 255), 4);
+    }
+}
+
+/*------------------- nkhEnd opencv -------------------*/
 
 /******************** nkhStart domainTransform ********************/
 // Recursive filter for vertical direction
@@ -421,11 +443,12 @@ void nkhMain(path inVid, path inFile, path outDir)
         //TODO: implement with GPU
         //Mat edgeSmooth = measure<std::chrono::milliseconds>(edgeAwareSmooth, frameResized);
         cv::Mat edgeSmooth;
+
         Mat2<float3> img = LoadPNG(inputPath);
         if (DTF_METHOD == "RF")
-            RF::filter(img, sigmaS, sigmaR, nIterations);
+            RF::filter(img, DOMAIN_SIGMA_S, DOMAIN_SIGMA_R, DOMAIN_MAX_ITER);
         else if (DTF_METHOD == "NC")
-            NC::filter(img, sigmaS, sigmaR, nIterations);
+            NC::filter(img, DOMAIN_SIGMA_S, DOMAIN_SIGMA_R, DOMAIN_MAX_ITER);
 
 //        edgeAwareSmooth(frameResized, edgeSmooth);
 /*
@@ -454,7 +477,6 @@ void nkhMain(path inVid, path inFile, path outDir)
         }
         */
         //contour appx
-        
 
         //Visualize
         /*
