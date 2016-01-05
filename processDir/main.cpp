@@ -437,6 +437,29 @@ void whiteThresh2(cv::Mat& edgeSmooth, cv::Mat& saliency, cv::Mat& fin)
 
 }
 
+void greenThresh1(cv::Mat& edgeSmooth, cv::Mat& saliency, cv::Mat& fin)
+{
+    cv::Mat hls, hlsChann[3];
+    cv::cvtColor(edgeSmooth, hls, CV_BGR2HLS);
+    cv::split(hls, hlsChann);
+    cv::Mat res1, res2;
+
+    //TODO :  Linear min max regression :
+    // http://www.xuru.org/rt/PR.asp#CopyPaste
+    /*
+     * 10 50
+22 25
+34 37
+50 20
+
+L S, for estimating min func with degree 3, do this on CUDA
+     */
+    //H: 140-170 of 360. L: 6 to 85 outf of 100.  S:30-100 out of 100 // OPENCV: 180 255 255 ranges
+    cv::inRange(hls, cv::Scalar(70, 25, 76), cv::Scalar(85, 216, 255), res1); //Threshold the image
+//    res2 = (hlsChann[1]>)
+    cv::threshold(res1, fin, 0, 255, cv::THRESH_BINARY);
+}
+
 /*------------------- nkhEnd Saliency -------------------*/
 
 void evaluateMasked(cv::Mat& masked, map<int, FrameObjects>& groundTruth, int frameNum, vector<double>& result);
@@ -582,7 +605,9 @@ void nkhMain(path inVid, path inFile, path outDir)
         //threshold
         cv::Mat fin;
         saliency *= 120; //in case white thresh2
-        whiteThresh2(edgeSmooth, saliency, fin);
+        //whiteThresh2(edgeSmooth, saliency, fin);
+        greenThresh1(edgeSmooth, saliency, fin);
+        //TODO: eval
 //        fin &= binMask; //in case of white thresh 1
         //evaluate Correlation
         //evaluateMasked(binMask, groundTruth, frameCount, evalSaliency);
