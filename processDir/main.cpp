@@ -445,16 +445,22 @@ void getMinS(cv::Mat& hls, cv::Mat* hlsChann, cv::Mat& hostMins)
     //0.01078941006 x^2 - 1.246292714 x + 57.70571406
     // 0.01649159736
     //6.467293081·10-3 x2 - 1.037263871 x + 130.4910273
-    cv::cuda::multiply(gpuHLSChann[1], gpuHLSChann[1], gpuTmp2, 0.006467293081);
-    gpuTmp1.convertTo(gpuTmp1, gpuTmp1.type(), 1.037263871);
+    //2.038547409·10-5 x4 - 6.176184996·10-3 x3 + 6.480170616·10-1 x2 - 27.36243368 x + 470.4070268
+    //Residual Sum of Squares: rss = 0
+
+    //FINAL 7.135881581·10-3 x2 - 1.199965519 x + 139.9490098
+    cv::cuda::multiply(gpuHLSChann[1], gpuHLSChann[1], gpuTmp2, 0.007135881581);
+    gpuTmp1.convertTo(gpuTmp1, gpuTmp1.type(), 1.199965519);
     cv::cuda::subtract(gpuTmp2, gpuTmp1, gpuMinS);
-    gpuTmp1 = cv::cuda::GpuMat(gpuTmp1.size(), gpuTmp1.type(), cv::Scalar(130.4910273));
+    gpuTmp1 = cv::cuda::GpuMat(gpuTmp1.size(), gpuTmp1.type(), cv::Scalar(70));//139.9490098
     cv::cuda::add(gpuMinS, gpuTmp1, gpuMinS);
     gpuMinS.download(hostMins);
+
     cv::compare(hlsChann[2], hostMins, hostMins, cv::CMP_GE);
+    hostMins = (hlsChann[2]>= 76) & (hlsChann[1]>=25) & hostMins;
 }
 
-void greenThresh1(cv::Mat& edgeSmooth, cv::Mat& saliency, cv::Mat& fin)
+void greenThresh1(cv::Mat& orig , cv::Mat& edgeSmooth, cv::Mat& saliency, cv::Mat& fin)
 {
     cv::Mat hls, hlsChann[3];
     cv::cvtColor(edgeSmooth, hls, CV_BGR2HLS);
@@ -473,22 +479,31 @@ L S, for estimating min func with degree 3, do this on CUDA
      */
     cv::Mat imgClone = cv::Mat::zeros(edgeSmooth.size(), CV_32F);
     cv::Mat hostMinS;
-    cv::inRange(hls, cv::Scalar(70, 25, 76), cv::Scalar(85, 216, 255), res1); //Threshold the image
-    cv::threshold(res1, fin, 0, 255, cv::THRESH_BINARY);
-    cv::imshow("No Curve", fin);
 
+    cv::inRange(hls, cv::Scalar(70, 25, 76), cv::Scalar(85, 216, 255), res1); //Threshold the color
+    cv::addWeighted(res1, 0.5, saliency, 0.5, 0, fin);
+    cv::cvtColor(orig, hls, cv::COLOR_BGR2HLS);
+
+    cv::inRange(hls, cv::Scalar(70, 16, 50), cv::Scalar(85, 216, 255), res1); //Threshold the color
+    fin = res1.clone();
+    return;
+
+    cv::addWeighted(res1, 0.4, fin, 0.5, 0, fin);
+    cv::imshow("finBef", fin);
+    cv::threshold(fin, fin, 150, 255, cv::THRESH_BINARY);
 
     //TODO:
     //    calc LS validation from non smoothed image & hue from smoothed.
-    getMinS(hls, hlsChann, hostMinS);
-    hostMinS.convertTo(hostMinS, CV_8U);
-    edgeSmooth.copyTo(imgClone, hostMinS);
-    cv::imshow("Valid LS", hostMinS);
-    cv::cvtColor(imgClone, hls, cv::COLOR_BGR2HLS);
+
+    //getMinS(hls, hlsChann, hostMinS);
+    //hostMinS.convertTo(hostMinS, CV_8U);
+    //edgeSmooth.copyTo(imgClone, hostMinS);
+    //cv::imshow("Valid LS", hostMinS);
+//    cv::cvtColor(imgClone, hls, cv::COLOR_BGR2HLS);
     //H: 140-170 of 360. L: 6 to 85 outf of 100.  S:30-100 out of 100 // OPENCV: 180 255 255 ranges
 //    6.467293081·10-3 x2 - 1.037263871 x + 130.4910273
-    cv::inRange(hls, cv::Scalar(70, 25, 76), cv::Scalar(85, 216, 255), res1); //Threshold the image
-    cv::threshold(res1, fin, 0, 255, cv::THRESH_BINARY);
+//    cv::inRange(hls, cv::Scalar(70, 25, 76), cv::Scalar(85, 216, 255), fin); //Threshold the image
+//    cv::threshold(res1, fin, 0, 255, cv::THRESH_BINARY);
 }
 
 /*------------------- nkhEnd Saliency -------------------*/
@@ -638,7 +653,13 @@ void nkhMain(path inVid, path inFile, path outDir)
         cv::Mat fin;
         saliency *= 120; //in case white thresh2
         //whiteThresh2(edgeSmooth, saliency, fin);
-        greenThresh1(edgeSmooth, saliency, fin);
+
+        cv::Mat edgeSmoothLow;
+        cv::ximgproc::dtFilter(edgeSmooth, frameResized, edgeSmoothLow, 25, 60, cv::ximgproc::DTF_NC); //r 350. 50. nc
+
+        greenThresh1(edgeSmoothLow, edgeSmooth, saliency, fin);
+        fin &= binMask;
+
         //TODO: eval
 //        fin &= binMask; //in case of white thresh 1
         //evaluate Correlation
@@ -651,7 +672,7 @@ void nkhMain(path inVid, path inFile, path outDir)
         */
         cv::Mat retParvo, retMagno;
 
-        imshow("Smooth", edgeSmooth);
+        imshow("Smooth", edgeSmoothLow);
 
 
         char controlChar = maybeImshow("Final", fin) ;
