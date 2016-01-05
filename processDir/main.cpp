@@ -8,6 +8,7 @@
 #include <opencv2/ximgproc.hpp>
 #include <opencv2/bioinspired.hpp>
 #include <opencv2/contrib/retina.hpp>
+#include <opencv2/cudaimgproc.hpp>
 
 //using namespace cv;
 #include <boost/accumulators/accumulators.hpp>
@@ -45,8 +46,8 @@ using namespace boost::accumulators;
     rec.width /= RESIZE_FACTOR/1.5;\
     rec.height /= RESIZE_FACTOR/1.5;\
     } //1.5 cuz of 1080p to 720p annotation
-#define DOMAIN_SIGMA_S 50
-#define DOMAIN_SIGMA_R 350
+#define DOMAIN_SIGMA_S 20 //30 orig
+#define DOMAIN_SIGMA_R 190 //350 orig
 #define DOMAIN_MAX_ITER 3
 #define DTF_METHOD "NC"
 
@@ -91,7 +92,7 @@ void nkhImshow(const char* windowName, cv::Mat& img)
     imshow(windowName, img);
 }
 
-char maybeImshow(const char* windowName, cv::Mat& img, int waitKeyTime=10)
+char maybeImshow(const char* windowName, cv::Mat& img, int waitKeyTime=20)
 {
     if(WITH_VISUALIZATION)
     {
@@ -437,6 +438,22 @@ void whiteThresh2(cv::Mat& edgeSmooth, cv::Mat& saliency, cv::Mat& fin)
 
 }
 
+void getMinS(cv::Mat& hls, cv::Mat* hlsChann, cv::Mat& hostMins)
+{
+    cv::cuda::GpuMat gpuHLS(hls), gpuHLSChann[3], gpuMinS, gpuTmp1(hlsChann[1]), gpuTmp2;
+    cv::cuda::split(gpuHLS, gpuHLSChann);
+    //0.01078941006 x^2 - 1.246292714 x + 57.70571406
+    // 0.01649159736
+    //6.467293081·10-3 x2 - 1.037263871 x + 130.4910273
+    cv::cuda::multiply(gpuHLSChann[1], gpuHLSChann[1], gpuTmp2, 0.006467293081);
+    gpuTmp1.convertTo(gpuTmp1, gpuTmp1.type(), 1.037263871);
+    cv::cuda::subtract(gpuTmp2, gpuTmp1, gpuMinS);
+    gpuTmp1 = cv::cuda::GpuMat(gpuTmp1.size(), gpuTmp1.type(), cv::Scalar(130.4910273));
+    cv::cuda::add(gpuMinS, gpuTmp1, gpuMinS);
+    gpuMinS.download(hostMins);
+    cv::compare(hlsChann[2], hostMins, hostMins, cv::CMP_GE);
+}
+
 void greenThresh1(cv::Mat& edgeSmooth, cv::Mat& saliency, cv::Mat& fin)
 {
     cv::Mat hls, hlsChann[3];
@@ -451,12 +468,26 @@ void greenThresh1(cv::Mat& edgeSmooth, cv::Mat& saliency, cv::Mat& fin)
 22 25
 34 37
 50 20
-
+//DO NOT FORGET TO SCALE 255, these are from 100
 L S, for estimating min func with degree 3, do this on CUDA
      */
-    //H: 140-170 of 360. L: 6 to 85 outf of 100.  S:30-100 out of 100 // OPENCV: 180 255 255 ranges
+    cv::Mat imgClone = cv::Mat::zeros(edgeSmooth.size(), CV_32F);
+    cv::Mat hostMinS;
     cv::inRange(hls, cv::Scalar(70, 25, 76), cv::Scalar(85, 216, 255), res1); //Threshold the image
-//    res2 = (hlsChann[1]>)
+    cv::threshold(res1, fin, 0, 255, cv::THRESH_BINARY);
+    cv::imshow("No Curve", fin);
+
+
+    //TODO:
+    //    calc LS validation from non smoothed image & hue from smoothed.
+    getMinS(hls, hlsChann, hostMinS);
+    hostMinS.convertTo(hostMinS, CV_8U);
+    edgeSmooth.copyTo(imgClone, hostMinS);
+    cv::imshow("Valid LS", hostMinS);
+    cv::cvtColor(imgClone, hls, cv::COLOR_BGR2HLS);
+    //H: 140-170 of 360. L: 6 to 85 outf of 100.  S:30-100 out of 100 // OPENCV: 180 255 255 ranges
+//    6.467293081·10-3 x2 - 1.037263871 x + 130.4910273
+    cv::inRange(hls, cv::Scalar(70, 25, 76), cv::Scalar(85, 216, 255), res1); //Threshold the image
     cv::threshold(res1, fin, 0, 255, cv::THRESH_BINARY);
 }
 
@@ -484,6 +515,7 @@ int main(int argc, char *argv[])
     
     if (WITH_CUDA == 1) {
         cerr << "USING CUDA\n";
+//        cv::gpu::setDevice(0);
     } else {
         cerr << "NOT USING CUDA\n";
     }
@@ -619,10 +651,10 @@ void nkhMain(path inVid, path inFile, path outDir)
         */
         cv::Mat retParvo, retMagno;
 
-        maybeImshow("Orig", edgeSmooth);
+        imshow("Smooth", edgeSmooth);
 
 
-        char controlChar = maybeImshow("fin", fin) ;
+        char controlChar = maybeImshow("Final", fin) ;
         if (controlChar == 'q')
         {
             break;
