@@ -13,7 +13,6 @@
 #include <opencv2/cudafeatures2d.hpp>
 #include <opencv2/cudafilters.hpp>
 #include <opencv2/cudaobjdetect.hpp>
-//#include <opencv2/cudalegacy.hpp>
 
 //using namespace cv;
 #include <boost/accumulators/accumulators.hpp>
@@ -506,7 +505,7 @@ void connectedMask(cv::Mat& smoothed, cv::Mat& conMap)
 //    devMap.download(conMap);
 }
 
-void getDFTPlanes(cv::Mat& I, cv::Mat& magI)
+void getDFTMag(cv::Mat& I, cv::Mat& magI)
 {
     cv::Mat padded;                            //expand input image to optimal size
     int m = cv::getOptimalDFTSize( I.rows );
@@ -551,9 +550,60 @@ void getDFTPlanes(cv::Mat& I, cv::Mat& magI)
 
     cv::normalize(magI, magI, 0, 1, CV_MINMAX); // Transform the matrix with float values into a
                                             // viewable image form (float between values 0 and 1).
-
 }
 
+//CUDA FFT is lower than CPU with Intel(R) Core(TM) i7-4702MQ CPU @ 2.20GHz, opencv with TBB. almost 3 times slower
+void getDFTMag_CUDA(cv::Mat& hostImg, cv::Mat& hostMagI)
+{
+    cv::cuda::GpuMat I(hostImg), magI;
+    cv::cuda::GpuMat padded;                            //expand input image to optimal size
+    int m = cv::getOptimalDFTSize( I.rows );
+    int n = cv::getOptimalDFTSize( I.cols ); // on the border add zero values
+    cv::cuda::copyMakeBorder(I, padded, 0, m - I.rows, 0, n - I.cols, cv::BORDER_CONSTANT, cv::Scalar::all(0));
+
+    cv::cuda::GpuMat planes[] = {cv::cuda::GpuMat(padded), cv::cuda::GpuMat(padded)};
+
+    planes[0].convertTo(planes[0], CV_32FC1);
+    planes[1].convertTo(planes[1], CV_32FC1);
+    cv::cuda::GpuMat complexI;
+    cv::cuda::merge(planes, 2, complexI);         // Add to the expanded another plane with zeros
+
+    cv::cuda::dft(complexI, complexI, padded.size());            // this way the result may fit in the source matrix
+
+    // compute the magnitude and switch to logarithmic scale
+    // => log(1 + sqrt(Re(DFT(I))^2 + Im(DFT(I))^2))
+    cv::cuda::split(complexI, planes);                   // planes[0] = Re(DFT(I), planes[1] = Im(DFT(I))
+    cv::cuda::magnitude(planes[0], planes[1], planes[0]);// planes[0] = magnitude
+    magI = planes[0];
+
+    cv::cuda::add(magI, cv::Scalar::all(1), magI);                    // switch to logarithmic scale
+    cv::cuda::log(magI, magI);
+
+    // crop the spectrum, if it has an odd number of rows or columns
+    magI = magI(cv::Rect(0, 0, magI.cols & -2, magI.rows & -2));
+
+    // rearrange the quadrants of Fourier image  so that the origin is at the image center
+    int cx = magI.cols/2;
+    int cy = magI.rows/2;
+
+    cv::cuda::GpuMat q0(magI, cv::Rect(0, 0, cx, cy));   // Top-Left - Create a ROI per quadrant
+    cv::cuda::GpuMat q1(magI, cv::Rect(cx, 0, cx, cy));  // Top-Right
+    cv::cuda::GpuMat q2(magI, cv::Rect(0, cy, cx, cy));  // Bottom-Left
+    cv::cuda::GpuMat q3(magI, cv::Rect(cx, cy, cx, cy)); // Bottom-Right
+
+    cv::cuda::GpuMat tmp;                           // swap quadrants (Top-Left with Bottom-Right)
+    q0.copyTo(tmp);
+    q3.copyTo(q0);
+    tmp.copyTo(q3);
+
+    q1.copyTo(tmp);                    // swap quadrant (Top-Right with Bottom-Left)
+    q2.copyTo(q1);
+    tmp.copyTo(q2);
+
+    cv::cuda::normalize(magI, magI, 0, 1, CV_MINMAX, -1); // Transform the matrix with float values into a
+                                            // viewable image form (float between values 0 and 1).
+    magI.download(hostMagI);
+}
 /*------------------- nkhEnd Saliency -------------------*/
 
 void evaluateMasked(cv::Mat& masked, map<int, FrameObjects>& groundTruth, int frameNum, vector<double>& result);
@@ -790,7 +840,10 @@ void nkhMain(path inVid, path inFile, path outDir)
         }
         */
 
-        char controlChar = maybeImshow("Final", frameResized) ;
+        cv::Mat imgMag;
+        getDFTMag(frameResized_gray, imgMag);
+/*
+        char controlChar = maybeImshow("Final", imgMag) ;
 //        controlChar = maybeImshow("Gray",frameResizedHalf );
         if (controlChar == 'q')
         {
@@ -805,7 +858,7 @@ void nkhMain(path inVid, path inFile, path outDir)
             cap.set(CV_CAP_PROP_POS_AVI_RATIO , 0);
         }
 
-
+*/
         fpsCalcEnd();
         cout<< timerFPS << endl;
         frameCount++;
