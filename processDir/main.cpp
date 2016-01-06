@@ -9,6 +9,10 @@
 #include <opencv2/bioinspired.hpp>
 #include <opencv2/contrib/retina.hpp>
 #include <opencv2/cudaimgproc.hpp>
+#include <opencv2/cudaarithm.hpp>
+#include <opencv2/cudafeatures2d.hpp>
+#include <opencv2/cudafilters.hpp>
+#include <opencv2/cudaobjdetect.hpp>
 
 //using namespace cv;
 #include <boost/accumulators/accumulators.hpp>
@@ -463,47 +467,14 @@ void getMinS(cv::Mat& hls, cv::Mat* hlsChann, cv::Mat& hostMins)
 void greenThresh1(cv::Mat& orig , cv::Mat& edgeSmooth, cv::Mat& saliency, cv::Mat& fin)
 {
     cv::Mat hls, hlsChann[3];
-    cv::cvtColor(edgeSmooth, hls, CV_BGR2HLS);
+    cv::cvtColor(orig, hls, CV_BGR2HLS);
     cv::split(hls, hlsChann);
-    cv::Mat res1, res2;
-
-    //TODO :  Linear min max regression :
-    // http://www.xuru.org/rt/PR.asp#CopyPaste
-    /*
-     * 10 50
-22 25
-34 37
-50 20
-//DO NOT FORGET TO SCALE 255, these are from 100
-L S, for estimating min func with degree 3, do this on CUDA
-     */
-    cv::Mat imgClone = cv::Mat::zeros(edgeSmooth.size(), CV_32F);
-    cv::Mat hostMinS;
-
-    cv::inRange(hls, cv::Scalar(70, 25, 76), cv::Scalar(85, 216, 255), res1); //Threshold the color
-    cv::addWeighted(res1, 0.5, saliency, 0.5, 0, fin);
-    cv::cvtColor(orig, hls, cv::COLOR_BGR2HLS);
-
-    cv::inRange(hls, cv::Scalar(70, 16, 50), cv::Scalar(85, 216, 255), res1); //Threshold the color
-    fin = res1.clone();
+    cv::inRange(hls, cv::Scalar(70, 25, 66), cv::Scalar(85, 216, 255), fin); //Threshold the color
+//    cv::cuda::GpuMat devImg(orig);
+//    cv::cuda::
+   // cv::addWeighted(saliency, 0.3, fin, 0.3, 0, fin);
+   // cv::threshold(fin, fin, 100, 255, cv::THRESH_BINARY);
     return;
-
-    cv::addWeighted(res1, 0.4, fin, 0.5, 0, fin);
-    cv::imshow("finBef", fin);
-    cv::threshold(fin, fin, 150, 255, cv::THRESH_BINARY);
-
-    //TODO:
-    //    calc LS validation from non smoothed image & hue from smoothed.
-
-    //getMinS(hls, hlsChann, hostMinS);
-    //hostMinS.convertTo(hostMinS, CV_8U);
-    //edgeSmooth.copyTo(imgClone, hostMinS);
-    //cv::imshow("Valid LS", hostMinS);
-//    cv::cvtColor(imgClone, hls, cv::COLOR_BGR2HLS);
-    //H: 140-170 of 360. L: 6 to 85 outf of 100.  S:30-100 out of 100 // OPENCV: 180 255 255 ranges
-//    6.467293081·10-3 x2 - 1.037263871 x + 130.4910273
-//    cv::inRange(hls, cv::Scalar(70, 25, 76), cv::Scalar(85, 216, 255), fin); //Threshold the image
-//    cv::threshold(res1, fin, 0, 255, cv::THRESH_BINARY);
 }
 
 /*------------------- nkhEnd Saliency -------------------*/
@@ -606,9 +577,6 @@ void nkhMain(path inVid, path inFile, path outDir)
                                              currentFrame.size().height/RESIZE_FACTOR));
         cv::cvtColor(frameResized, frameResized_gray, cv::COLOR_BGR2GRAY);
 
-
-        //SaliencyMap
-        cv::Mat saliency;
         /*
         //Mat edgeSmooth;
         //edgeAwareSmooth(frameResized, edgeSmooth);
@@ -617,26 +585,24 @@ void nkhMain(path inVid, path inFile, path outDir)
         */
         //blur(frameResized_gray, frameResized_gray, Size(10,10));
 
-        computeSaliency(frameResized_gray, saliency);
+        //TODO: implement with GPU
+        //Mat edgeSmooth = measure<std::chrono::milliseconds>(edgeAwareSmooth, frameResized);
+        cv::Mat edgeSmooth;
+        dtfWrapper(frameResized, edgeSmooth);
+
+        cv::Mat edgeSmoothLow;
+        cv::ximgproc::dtFilter(edgeSmooth, frameResized, edgeSmoothLow, 25, 60, cv::ximgproc::DTF_NC); //r 350. 50. nc
+
+
+        //SaliencyMap
+        cv::Mat saliency;
+        computeSaliency(edgeSmoothLow, saliency);
         cv::Mat masked, binMask;
         saliency = saliency * 3;
         saliency.convertTo( saliency, CV_8U );
         // adaptative thresholding using Otsu's method, to make saliency map binary
         threshold( saliency, binMask, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU );
         frameResized.copyTo(masked, binMask);
-        //maybeImshow("orig", frameResized);
-//        if(maybeImshow("Saliency", masked) == 'q') break;
-
-
-        /*
-        if(maybeImshow("resized orig", frameResized)=='q')
-            break;
-            */
-        //TODO: implement with GPU
-        //Mat edgeSmooth = measure<std::chrono::milliseconds>(edgeAwareSmooth, frameResized);
-        cv::Mat edgeSmooth;
-        dtfWrapper(frameResized, edgeSmooth);
-
         //edgeAwareSmooth(frameResized, edgeSmooth);
 /*
         cv::Mat p = frameResized;
@@ -651,15 +617,15 @@ void nkhMain(path inVid, path inFile, path outDir)
 
         //threshold
         cv::Mat fin;
-        saliency *= 120; //in case white thresh2
+
+//        saliency *= 120; //in case white thresh2
         //whiteThresh2(edgeSmooth, saliency, fin);
 
-        cv::Mat edgeSmoothLow;
-        cv::ximgproc::dtFilter(edgeSmooth, frameResized, edgeSmoothLow, 25, 60, cv::ximgproc::DTF_NC); //r 350. 50. nc
-
-        greenThresh1(edgeSmoothLow, edgeSmooth, saliency, fin);
-        fin &= binMask;
-
+        greenThresh1(frameResized, edgeSmooth, saliency, fin);
+        cv::Mat fin2;
+        greenThresh1(edgeSmoothLow, edgeSmooth, saliency, fin2);
+        cv::addWeighted(fin, 0.2, fin2, 0.2, 0 , fin);
+//        cv::threshold(fin, fin, 200, 255, cv::THRESH_BINARY);
         //TODO: eval
 //        fin &= binMask; //in case of white thresh 1
         //evaluate Correlation
@@ -672,7 +638,7 @@ void nkhMain(path inVid, path inFile, path outDir)
         */
         cv::Mat retParvo, retMagno;
 
-        imshow("Smooth", edgeSmoothLow);
+        imshow("Smooth", edgeSmooth);
 
 
         char controlChar = maybeImshow("Final", fin) ;
