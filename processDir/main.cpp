@@ -52,9 +52,9 @@ using namespace boost::accumulators;
     rec.height /= RESIZE_FACTOR/1.5;\
     } //1.5 cuz of 1080p to 720p annotation
 #define DOMAIN_SIGMA_S 30 //30 orig// 20 green & brown
-#define DOMAIN_SIGMA_R 350 //350 orig //190 in green //290 brown
+#define DOMAIN_SIGMA_R 270 //350 orig //190 in green //290 brown
 #define DOMAIN_MAX_ITER 3
-#define DTF_METHOD "NC"
+#define DTF_METHOD "IC"
 
 /*----------------- nkhEnd: global vars and defs -----------------*/
 
@@ -282,11 +282,11 @@ void edgeAwareSmooth(cv::Mat& img, cv::Mat &dst);
 /*------------------- nkhEnd domainTransform -------------------*/
 
 /******************** nkhStart Saliency ********************/
-void computeSaliency(cv::Mat& imgGray, cv::Mat& saliencyMap)
+void computeSaliency(cv::Mat& imgGray, int resizeFac, cv::Mat& saliencyMap)
 {
     cv::Mat grayDown;
     std::vector<cv::Mat> mv;
-    cv::Size resizedImageSize( 64, 64 );
+    cv::Size resizedImageSize( resizeFac, resizeFac );
     
     cv::Mat realImage( resizedImageSize, CV_64F );
     cv::Mat imaginaryImage( resizedImageSize, CV_64F );
@@ -440,7 +440,7 @@ void whiteThresh2(cv::Mat& edgeSmooth, cv::Mat& saliencyOrig, cv::Mat& fin)
 //        fin = (hlsChann[1]>=100) & tmp;//worked
     hlsChann[1].copyTo(tmp, hlsChann[1]<=100);
     cv::addWeighted(tmp, 0.7 , tmpOrig, 0.3, -10.0, fin);
-    cv::addWeighted(saliency, 0.8, fin, 0.8, -10, fin); //Play With it! //TODO
+    cv::addWeighted(saliency, 0.8, fin, 0.7, -10, fin); //Play With it! //TODO
     cv::threshold(fin, fin, 170, 255, cv::THRESH_BINARY);
 
 }
@@ -615,11 +615,14 @@ void nkhMain(path inVid, path inFile, path outDir)
 
 
         //SaliencyMap
-        cv::Mat saliency;
-        computeSaliency(frameResized, saliency);
+        cv::Mat saliency, saliency72;
+        computeSaliency(frameResized, 55 , saliency);
+        computeSaliency(frameResized, 64 , saliency72);
         cv::Mat masked, binMask;
         saliency = saliency * 3;
+        saliency72 = saliency72 * 3;
         saliency.convertTo( saliency, CV_8U );
+        saliency72.convertTo( saliency72, CV_8U );
         // adaptative thresholding using Otsu's method, to make saliency map binary
         threshold( saliency, binMask, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU );
         //edgeAwareSmooth(frameResized, edgeSmooth);
@@ -627,7 +630,7 @@ void nkhMain(path inVid, path inFile, path outDir)
         //threshold
         cv::Mat fin, whiteMask;
 
-        whiteThresh2(edgeSmooth, saliency, whiteMask);
+        whiteThresh2(edgeSmooth, saliency72, whiteMask);
 
         cv::Mat greenMask;
         greenThresh1(edgeSmoothLow, greenMask);
@@ -649,10 +652,35 @@ void nkhMain(path inVid, path inFile, path outDir)
 
         */
 
-        cv::Mat colorMask = greenMask | whiteMask | brownMask ;
-        fin = colorMask & binMask;
 
-        edgeSmoothLow.copyTo(masked, fin);
+        int erosionDilation_size = 7;
+        cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT,
+                                                    cv::Size(2*erosionDilation_size + 1,
+                                                             2*erosionDilation_size+1));
+
+        cv::Mat colorMask = greenMask | whiteMask | brownMask ;
+        cv::blur(colorMask, colorMask, cv::Size(12,12));
+        fin = colorMask & binMask;
+        cv::dilate(fin, fin, element);
+        cv::erode(fin, fin, element);
+
+
+        edgeSmooth.copyTo(masked, fin);
+
+
+        /*
+         * GPU
+         * int erosionDilation_size = 5;
+    Mat element = cv::getStructuringElement(MORPH_RECT, Size(2*erosionDilation_size + 1,    2*erosionDilation_size+1));
+
+    cuda::GpuMat d_element(element);
+    cuda::GpuMat d_img(img);
+
+    Ptr<cuda::Filter> dilateFilter = cuda::createMorphologyFilter(MORPH_DILATE, d_img.type(), element);
+    dilateFilter->apply(d_img, d_img);
+
+
+         */
 
 
         //MSER
@@ -682,9 +710,9 @@ void nkhMain(path inVid, path inFile, path outDir)
         */
 
         //Visualize
-        /*
-        char controlChar = maybeImshow("Final", masked ) ;
-        controlChar = maybeImshow("Smooth", edgeSmooth);
+
+        char controlChar = maybeImshow("Final", masked  ) ;
+        //controlChar = maybeImshow("Smooth", edgeSmooth);
         if (controlChar == 'q')
         {
             break;
@@ -697,7 +725,7 @@ void nkhMain(path inVid, path inFile, path outDir)
         {
             cap.set(CV_CAP_PROP_POS_AVI_RATIO , 0);
         }
-        */
+
 
 
         fpsCalcEnd();
