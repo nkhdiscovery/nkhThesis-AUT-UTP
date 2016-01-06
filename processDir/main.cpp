@@ -13,6 +13,7 @@
 #include <opencv2/cudafeatures2d.hpp>
 #include <opencv2/cudafilters.hpp>
 #include <opencv2/cudaobjdetect.hpp>
+//#include <opencv2/cudalegacy.hpp>
 
 //using namespace cv;
 #include <boost/accumulators/accumulators.hpp>
@@ -50,8 +51,8 @@ using namespace boost::accumulators;
     rec.width /= RESIZE_FACTOR/1.5;\
     rec.height /= RESIZE_FACTOR/1.5;\
     } //1.5 cuz of 1080p to 720p annotation
-#define DOMAIN_SIGMA_S 20 //30 orig
-#define DOMAIN_SIGMA_R 290 //350 orig //190 in green
+#define DOMAIN_SIGMA_S 30 //30 orig// 20 green & brown
+#define DOMAIN_SIGMA_R 350 //350 orig //190 in green //290 brown
 #define DOMAIN_MAX_ITER 3
 #define DTF_METHOD "NC"
 
@@ -498,6 +499,13 @@ void brownThresh1(cv::Mat& orig , cv::Mat& fin)
     return;
 }
 
+void connectedMask(cv::Mat& smoothed, cv::Mat& conMap)
+{
+//    cv::cuda::GpuMat devSmooth(smoothed), devMap;
+//    cv::cuda::connectivityMask(devSmooth, devMap, cv::Scalar::all(0), cv::Scalar::all(2));
+//    devMap.download(conMap);
+}
+
 /*------------------- nkhEnd Saliency -------------------*/
 
 void evaluateMasked(cv::Mat& masked, map<int, FrameObjects>& groundTruth, int frameNum, vector<double>& result);
@@ -597,14 +605,6 @@ void nkhMain(path inVid, path inFile, path outDir)
                                              currentFrame.size().height/RESIZE_FACTOR));
         cv::cvtColor(frameResized, frameResized_gray, cv::COLOR_BGR2GRAY);
 
-        /*
-        //Mat edgeSmooth;
-        //edgeAwareSmooth(frameResized, edgeSmooth);
-        //edgeSmooth.convertTo(edgeSmooth, CV_32F);
-        //cvtColor(edgeSmooth, frameResized_gray, COLOR_BGR2GRAY);
-        */
-        //blur(frameResized_gray, frameResized_gray, Size(10,10));
-
         //TODO: implement with GPU
         //Mat edgeSmooth = measure<std::chrono::milliseconds>(edgeAwareSmooth, frameResized);
         cv::Mat edgeSmooth;
@@ -623,23 +623,11 @@ void nkhMain(path inVid, path inFile, path outDir)
         // adaptative thresholding using Otsu's method, to make saliency map binary
         threshold( saliency, binMask, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU );
         //edgeAwareSmooth(frameResized, edgeSmooth);
-/*
-        cv::Mat p = frameResized;
-
-        int r = 4; // try r=2, 4, or 8
-        double eps = 0.4 * 0.4; // try eps=0.1^2, 0.2^2, 0.4^2
-
-        eps *= 255 * 255;   // Because the intensity range of our images is [0, 255]
-
-        edgeSmooth = guidedFilter(frameResized, p, r, eps);
-*/
 
         //threshold
         cv::Mat fin, whiteMask;
 
         whiteThresh2(edgeSmooth, saliency, whiteMask);
-
-//        whiteThresh1(edgeSmooth, whiteMask); // TOO MANY AREAS
 
         cv::Mat greenMask;
         greenThresh1(edgeSmoothLow, greenMask);
@@ -647,51 +635,56 @@ void nkhMain(path inVid, path inFile, path outDir)
         cv::Mat brownMask;
         brownThresh1(edgeSmooth, brownMask);
 
+        /*
+        //TODO: Weight if needed
+
 //        cv::Mat fin2;
 //        greenThresh1(edgeSmoothLow, edgeSmooth, saliency, fin2);
 //        cv::addWeighted(fin, 0.2, fin2, 0.2, 0 , fin);
 //        cv::threshold(fin, greenMask, 100, 255, cv::THRESH_BINARY);
-        /*
+
         //TODO: eval
-//        fin &= binMask; //in case of white thresh 1
         //evaluate Correlation
         //evaluateMasked(binMask, groundTruth, frameCount, evalSaliency);
 
-
-        cout << res2 << endl ;
-        int t ;
-        cin >> t ;
         */
 
+        cv::Mat colorMask = greenMask | whiteMask | brownMask ;
+        fin = colorMask & binMask;
 
-        fin = greenMask | whiteMask ;
-        fin &= binMask;
-
-        frameResized.copyTo(masked, fin);
-
-        imshow("W Mask", edgeSmooth);
+        edgeSmoothLow.copyTo(masked, fin);
 
 
-//        char controlChar = maybeImshow("Final", fin) ;
-//        if (controlChar == 'q')
-//        {
-//            break;
-//        }
-//        else if (controlChar == 'p')
-//        {
-//            while (cvWaitKey(10) != 'p');
-//        }
-//        else if(controlChar == 'r')
-//        {
-//            cap.set(CV_CAP_PROP_POS_AVI_RATIO , 0);
-//        }
-
+        //MSER
+/*
+        std::vector< std::vector< cv::Point> > contours;
+        std::vector< cv::Rect> bboxes;
+        // Ptr< MSER> mser = MSER::create(21, (int)(0.00002*textImg.cols*textImg.rows),
+        //(int)(0.05*textImg.cols*textImg.rows), 1, 0.7);
+        cv::Ptr< cv::MSER> mser = cv::MSER::create(100);
+        mser->detectRegions(masked, contours, bboxes);
+        for (int i = 0; i < bboxes.size(); i++)
+        {
+            cv::rectangle(masked, bboxes[i], CV_RGB(0, 255, 0));
+        }
+*/
 
         //contour appx
 
-        //Visualize
+        /*
+        cv::Mat edgeImg;
+        cv::cuda::GpuMat devSmooth(edgeSmoothLow), devEqHist, devGraySmooth, devEdgeImg;
+        cv::cuda::cvtColor(devSmooth, devGraySmooth, cv::COLOR_BGR2GRAY);
+        cv::cuda::equalizeHist(devGraySmooth, devEqHist);
+        cv::Ptr<cv::cuda::CannyEdgeDetector> cudaCanny = cv::cuda::createCannyEdgeDetector(50, 150);
+        cudaCanny->detect(devEqHist, devEdgeImg);
+        devEdgeImg.download(edgeImg);
+        */
 
-        char controlChar = maybeImshow("Masked", brownMask ) ;
+        //Visualize
+        /*
+        char controlChar = maybeImshow("Final", masked ) ;
+        controlChar = maybeImshow("Smooth", edgeSmooth);
         if (controlChar == 'q')
         {
             break;
@@ -700,6 +693,11 @@ void nkhMain(path inVid, path inFile, path outDir)
         {
             while (cvWaitKey(10) != 'p');
         }
+        else if(controlChar == 'r')
+        {
+            cap.set(CV_CAP_PROP_POS_AVI_RATIO , 0);
+        }
+        */
 
 
         fpsCalcEnd();
@@ -707,12 +705,12 @@ void nkhMain(path inVid, path inFile, path outDir)
         frameCount++;
 
         //Handle Memory
-        frameResized.release();
-        frameResized_gray.release();
-        saliency.release();
+//        frameResized.release();
+//        frameResized_gray.release();
+//        saliency.release();
 //        masked.release();
 //        binMask.release();
-        edgeSmooth.release();
+//        edgeSmooth.release();
         //Free to go
 
     }
@@ -841,6 +839,7 @@ void parseFile(path inFile, map<int, FrameObjects>& theMap)
         txtFile.close();
     }
 }
+
 
 /*
 void nkhTest()
