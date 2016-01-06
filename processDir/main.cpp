@@ -51,7 +51,7 @@ using namespace boost::accumulators;
     rec.height /= RESIZE_FACTOR/1.5;\
     } //1.5 cuz of 1080p to 720p annotation
 #define DOMAIN_SIGMA_S 20 //30 orig
-#define DOMAIN_SIGMA_R 190 //350 orig
+#define DOMAIN_SIGMA_R 290 //350 orig //190 in green
 #define DOMAIN_MAX_ITER 3
 #define DTF_METHOD "NC"
 
@@ -468,10 +468,33 @@ void getMinS(cv::Mat& hls, cv::Mat* hlsChann, cv::Mat& hostMins)
 
 void greenThresh1(cv::Mat& orig , cv::Mat& fin)
 {
-    cv::Mat hls, hlsChann[3];
+    cv::Mat hls;//, hlsChann[3];
+    cv::cvtColor(orig, hls, CV_BGR2HLS);
+    //cv::split(hls, hlsChann);
+    cv::Mat tmp;
+    cv::inRange(hls, cv::Scalar(75, 25, 63), cv::Scalar(98, 226, 255), tmp); //Threshold the color
+    cv::threshold(tmp, tmp, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
+    fin = tmp.clone();
+    return;
+}
+
+
+void brownThresh1(cv::Mat& orig , cv::Mat& fin)
+{
+    cv::Mat hls, hlsChann[3], bgrChan[3];
+    cv::split(orig, bgrChan);
+    cv::Mat bgDiff, tmp1;
+    cv::absdiff(bgrChan[0], bgrChan[1], bgDiff);
+    bgDiff = (bgDiff <=4);
+    cv::addWeighted(bgrChan[0], 0.5, bgrChan[1], 0.5, 0, tmp1);
+    cv::subtract(tmp1, bgrChan[2], tmp1, bgDiff);
+    tmp1 = (tmp1<=10) & (tmp1>=4);
+
     cv::cvtColor(orig, hls, CV_BGR2HLS);
     cv::split(hls, hlsChann);
-    cv::inRange(hls, cv::Scalar(70, 25, 66), cv::Scalar(85, 216, 255), fin); //Threshold the color
+    cv::inRange(hls, cv::Scalar(0, 25, 66), cv::Scalar(21, 216, 255), fin); //Threshold the color
+    fin = tmp1 & (hlsChann[1]<155) & (hlsChann[2]< 100) & (hlsChann[1]>=25) | fin ;//& (hlsChann[0]<=90);// (hlsChann[2]>=15)& ;
+//    fin |= (hlsChann[1]<43) & (hlsChann[2]<128) & (hlsChann[0] <89);
     return;
 }
 
@@ -599,7 +622,6 @@ void nkhMain(path inVid, path inFile, path outDir)
         saliency.convertTo( saliency, CV_8U );
         // adaptative thresholding using Otsu's method, to make saliency map binary
         threshold( saliency, binMask, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU );
-        frameResized.copyTo(masked, binMask);
         //edgeAwareSmooth(frameResized, edgeSmooth);
 /*
         cv::Mat p = frameResized;
@@ -613,16 +635,22 @@ void nkhMain(path inVid, path inFile, path outDir)
 */
 
         //threshold
-        cv::Mat fin, whiteMask, greenMask;
+        cv::Mat fin, whiteMask;
 
         whiteThresh2(edgeSmooth, saliency, whiteMask);
+
 //        whiteThresh1(edgeSmooth, whiteMask); // TOO MANY AREAS
-        greenThresh1(frameResized, fin);
+
+        cv::Mat greenMask;
+        greenThresh1(edgeSmoothLow, greenMask);
+
+        cv::Mat brownMask;
+        brownThresh1(edgeSmooth, brownMask);
 
 //        cv::Mat fin2;
 //        greenThresh1(edgeSmoothLow, edgeSmooth, saliency, fin2);
 //        cv::addWeighted(fin, 0.2, fin2, 0.2, 0 , fin);
-        cv::threshold(fin, greenMask, 100, 255, cv::THRESH_BINARY);
+//        cv::threshold(fin, greenMask, 100, 255, cv::THRESH_BINARY);
         /*
         //TODO: eval
 //        fin &= binMask; //in case of white thresh 1
@@ -635,10 +663,13 @@ void nkhMain(path inVid, path inFile, path outDir)
         cin >> t ;
         */
 
+
         fin = greenMask | whiteMask ;
         fin &= binMask;
 
-//        imshow("W Mask", edgeSmoothLow);
+        frameResized.copyTo(masked, fin);
+
+        imshow("W Mask", edgeSmooth);
 
 
 //        char controlChar = maybeImshow("Final", fin) ;
@@ -659,8 +690,8 @@ void nkhMain(path inVid, path inFile, path outDir)
         //contour appx
 
         //Visualize
-/*
-        char controlChar = maybeImshow("Smooth", edgeSmooth) ;
+
+        char controlChar = maybeImshow("Masked", brownMask ) ;
         if (controlChar == 'q')
         {
             break;
@@ -669,7 +700,7 @@ void nkhMain(path inVid, path inFile, path outDir)
         {
             while (cvWaitKey(10) != 'p');
         }
-*/
+
 
         fpsCalcEnd();
         cout<< timerFPS << endl;
