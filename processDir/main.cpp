@@ -399,8 +399,10 @@ void whiteThresh1(cv::Mat& edgeSmooth, cv::Mat& fin)
     fin = (hlsChann[1]>=100) & tmp;//worked
 }
 
-void whiteThresh2(cv::Mat& edgeSmooth, cv::Mat& saliency, cv::Mat& fin)
+void whiteThresh2(cv::Mat& edgeSmooth, cv::Mat& saliencyOrig, cv::Mat& fin)
 {
+    cv::Mat saliency(saliencyOrig);
+    saliency *= 120;
     //threshold
     cv::Mat chann[3], hls, hlsChann[3];
     cv::cvtColor(edgeSmooth, hls, CV_BGR2HLS);
@@ -464,16 +466,12 @@ void getMinS(cv::Mat& hls, cv::Mat* hlsChann, cv::Mat& hostMins)
     hostMins = (hlsChann[2]>= 76) & (hlsChann[1]>=25) & hostMins;
 }
 
-void greenThresh1(cv::Mat& orig , cv::Mat& edgeSmooth, cv::Mat& saliency, cv::Mat& fin)
+void greenThresh1(cv::Mat& orig , cv::Mat& fin)
 {
     cv::Mat hls, hlsChann[3];
     cv::cvtColor(orig, hls, CV_BGR2HLS);
     cv::split(hls, hlsChann);
     cv::inRange(hls, cv::Scalar(70, 25, 66), cv::Scalar(85, 216, 255), fin); //Threshold the color
-//    cv::cuda::GpuMat devImg(orig);
-//    cv::cuda::
-   // cv::addWeighted(saliency, 0.3, fin, 0.3, 0, fin);
-   // cv::threshold(fin, fin, 100, 255, cv::THRESH_BINARY);
     return;
 }
 
@@ -568,7 +566,6 @@ void nkhMain(path inVid, path inFile, path outDir)
         {
             cap.set(CV_CAP_PROP_POS_AVI_RATIO , 0);
             continue;
-//            break;
         }
         fpsCalcStart();
         
@@ -596,7 +593,7 @@ void nkhMain(path inVid, path inFile, path outDir)
 
         //SaliencyMap
         cv::Mat saliency;
-        computeSaliency(edgeSmoothLow, saliency);
+        computeSaliency(frameResized, saliency);
         cv::Mat masked, binMask;
         saliency = saliency * 3;
         saliency.convertTo( saliency, CV_8U );
@@ -616,44 +613,47 @@ void nkhMain(path inVid, path inFile, path outDir)
 */
 
         //threshold
-        cv::Mat fin;
+        cv::Mat fin, whiteMask, greenMask;
 
-//        saliency *= 120; //in case white thresh2
-        //whiteThresh2(edgeSmooth, saliency, fin);
+        whiteThresh2(edgeSmooth, saliency, whiteMask);
+//        whiteThresh1(edgeSmooth, whiteMask); // TOO MANY AREAS
+        greenThresh1(frameResized, fin);
 
-        greenThresh1(frameResized, edgeSmooth, saliency, fin);
-        cv::Mat fin2;
-        greenThresh1(edgeSmoothLow, edgeSmooth, saliency, fin2);
-        cv::addWeighted(fin, 0.2, fin2, 0.2, 0 , fin);
-//        cv::threshold(fin, fin, 200, 255, cv::THRESH_BINARY);
+//        cv::Mat fin2;
+//        greenThresh1(edgeSmoothLow, edgeSmooth, saliency, fin2);
+//        cv::addWeighted(fin, 0.2, fin2, 0.2, 0 , fin);
+        cv::threshold(fin, greenMask, 100, 255, cv::THRESH_BINARY);
+        /*
         //TODO: eval
 //        fin &= binMask; //in case of white thresh 1
         //evaluate Correlation
         //evaluateMasked(binMask, groundTruth, frameCount, evalSaliency);
 
-        /*
+
         cout << res2 << endl ;
         int t ;
         cin >> t ;
         */
-        cv::Mat retParvo, retMagno;
 
-        imshow("Smooth", edgeSmooth);
+        fin = greenMask | whiteMask ;
+        fin &= binMask;
+
+//        imshow("W Mask", edgeSmoothLow);
 
 
-        char controlChar = maybeImshow("Final", fin) ;
-        if (controlChar == 'q')
-        {
-            break;
-        }
-        else if (controlChar == 'p')
-        {
-            while (cvWaitKey(10) != 'p');
-        }
-        else if(controlChar == 'r')
-        {
-            cap.set(CV_CAP_PROP_POS_AVI_RATIO , 0);
-        }
+//        char controlChar = maybeImshow("Final", fin) ;
+//        if (controlChar == 'q')
+//        {
+//            break;
+//        }
+//        else if (controlChar == 'p')
+//        {
+//            while (cvWaitKey(10) != 'p');
+//        }
+//        else if(controlChar == 'r')
+//        {
+//            cap.set(CV_CAP_PROP_POS_AVI_RATIO , 0);
+//        }
 
 
         //contour appx
