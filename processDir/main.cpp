@@ -505,22 +505,23 @@ void connectedMask(cv::Mat& smoothed, cv::Mat& conMap)
 //    devMap.download(conMap);
 }
 
-void getDFTMag(cv::Mat& I, cv::Mat& magI)
+void getDFTMag(cv::Mat& I, cv::Mat& complexI, cv::Mat& magI)
 {
-    cv::Mat padded;                            //expand input image to optimal size
-    int m = cv::getOptimalDFTSize( I.rows );
-    int n = cv::getOptimalDFTSize( I.cols ); // on the border add zero values
-    cv::copyMakeBorder(I, padded, 0, m - I.rows, 0, n - I.cols, cv::BORDER_CONSTANT, cv::Scalar::all(0));
+    cv::Mat padded(I);                            //expand input image to optimal size
+//    int m = cv::getOptimalDFTSize( I.rows );
+//    int n = cv::getOptimalDFTSize( I.cols ); // on the border add zero values
+//    cv::copyMakeBorder(I, padded, 0, m - I.rows, 0, n - I.cols, cv::BORDER_CONSTANT, cv::Scalar::all(0));
 
     cv::Mat planes[] = {cv::Mat_<float>(padded), cv::Mat::zeros(padded.size(), CV_32F)};
-    cv::Mat complexI;
     cv::merge(planes, 2, complexI);         // Add to the expanded another plane with zeros
 
     cv::dft(complexI, complexI);            // this way the result may fit in the source matrix
 
+
     // compute the magnitude and switch to logarithmic scale
     // => log(1 + sqrt(Re(DFT(I))^2 + Im(DFT(I))^2))
     cv::split(complexI, planes);                   // planes[0] = Re(DFT(I), planes[1] = Im(DFT(I))
+
     cv::magnitude(planes[0], planes[1], planes[0]);// planes[0] = magnitude
     magI = planes[0];
 
@@ -550,6 +551,15 @@ void getDFTMag(cv::Mat& I, cv::Mat& magI)
 
     cv::normalize(magI, magI, 0, 1, CV_MINMAX); // Transform the matrix with float values into a
                                             // viewable image form (float between values 0 and 1).
+
+}
+
+void getDFTInv(cv::Mat& complexI, cv::Mat& inverseTransform)
+{
+    //calculating the idft
+    cv::dft(complexI, inverseTransform, cv::DFT_INVERSE|cv::DFT_REAL_OUTPUT);
+    normalize(inverseTransform, inverseTransform, 0, 1, CV_MINMAX);
+    //imshow("Reconstructed", inverseTransform);
 }
 
 //CUDA FFT is lower than CPU with Intel(R) Core(TM) i7-4702MQ CPU @ 2.20GHz, opencv with TBB. almost 3 times slower
@@ -604,6 +614,39 @@ void getDFTMag_CUDA(cv::Mat& hostImg, cv::Mat& hostMagI)
                                             // viewable image form (float between values 0 and 1).
     magI.download(hostMagI);
 }
+
+
+cv::Mat lookupTable(int levels) {
+    int factor = 256 / levels;
+    cv::Mat table(1, 256, CV_8U);
+    uchar *p = table.data;
+
+    for(int i = 0; i < 128; ++i) {
+        p[i] = factor * (i / factor);
+    }
+
+    for(int i = 128; i < 256; ++i) {
+        p[i] = factor * (1 + (i / factor)) - 1;
+    }
+
+    return table;
+}
+cv::Mat colorReduce(const cv::Mat &image, int levels) {
+    cv::Mat table = lookupTable(levels);
+
+    std::vector<cv::Mat> c;
+    cv::split(image, c);
+    for (std::vector<cv::Mat>::iterator i = c.begin(), n = c.end(); i != n; ++i) {
+        cv::Mat &channel = *i;
+        cv::LUT(channel.clone(), table, channel);
+    }
+
+    cv::Mat reduced;
+    cv::merge(c, reduced);
+    return reduced;
+}
+
+
 /*------------------- nkhEnd Saliency -------------------*/
 
 void evaluateMasked(cv::Mat& masked, map<int, FrameObjects>& groundTruth, int frameNum, vector<double>& result);
@@ -689,10 +732,20 @@ void nkhMain(path inVid, path inFile, path outDir)
     on_trackbarR( sigmaR, 0 );
     */
 
-    /*
-    cv::Mat template1 = cv::imread("1.png");
-    cv::cuda::GpuMat devTemplate(template1);
+/*
+    cv::Mat template1 = cv::imread("1.png", CV_LOAD_IMAGE_COLOR);
+    cv::Mat tmplGray;
+    cv::resize(template1, template1, cv::Size(template1.size().width/1, template1.size().height/1));
+    cv::cvtColor(template1, tmplGray, cv::COLOR_BGR2GRAY);
+    cv::threshold(tmplGray, tmplGray, 200, 255, cv::THRESH_BINARY);
+
+    if(template1.empty())
+    {
+        cerr << "tmpl err\n";
+        return;
+    }
     */
+
 
     while(true)
     {
@@ -840,11 +893,51 @@ void nkhMain(path inVid, path inFile, path outDir)
         }
         */
 
-        cv::Mat imgMag;
-        getDFTMag(frameResized_gray, imgMag);
 /*
-        char controlChar = maybeImshow("Final", imgMag) ;
-//        controlChar = maybeImshow("Gray",frameResizedHalf );
+        cv::Mat imgPlanes[2], tmplPlanes[2], imgComplex, tmplComplex, imgMag, tmplMag, imgAngle, tmplAngle;
+        getDFTMag(frameResized_gray, imgComplex, imgMag);
+
+        cv::Mat padded;                            //expand input image to optimal size
+        cv::copyMakeBorder(tmplGray, padded, (frameResized_gray.rows-tmplGray.rows)/2, (frameResized_gray.rows-tmplGray.rows)/2, (frameResized_gray.cols-tmplGray.cols)/2, (frameResized_gray.cols-tmplGray.cols)/2, cv::BORDER_CONSTANT, cv::Scalar::all(0));
+        getDFTMag(padded, tmplComplex, tmplMag);
+
+
+        cv::split(tmplComplex, tmplPlanes);
+        cv::split(imgComplex, imgPlanes);
+
+//        cv::magnitude(imgPlanes[0], imgPlanes[1], imgMag);
+//        cv::magnitude(tmplPlanes[0], tmplPlanes[1], tmplMag);
+//        cv::phase(imgPlanes[0], imgPlanes[1], imgAngle);
+//        cv::phase(tmplPlanes[0], tmplPlanes[1], tmplAngle);
+
+        cv::Mat magImg2, magTmpl2, angImg2, angTmpl2;
+        cv::cartToPolar(imgPlanes[0], imgPlanes[1], magImg2, angImg2);
+        cv::cartToPolar(tmplPlanes[0], tmplPlanes[1], magTmpl2, angTmpl2);
+
+        cv::Mat magDFTImg, magComplexImg, magPlanesImg[2];
+        getDFTMag(magImg2, magComplexImg, magDFTImg);
+        cv::Mat magDFTTmpl, magComplexTmpl, magPlanesTmpl[2];
+        getDFTMag(magTmpl2, magComplexTmpl, magDFTTmpl);
+        */
+
+/*
+        tmplMag += cv::Scalar::all(1); // switch to logarithmic scale
+        cv::log(tmplMag, tmplMag);
+        imgMag += cv::Scalar::all(1); // switch to logarithmic scale
+        cv::log(imgMag, imgMag);
+
+        cv::normalize(imgMag, imgMag, 0, 1, CV_MINMAX);
+        cv::normalize(tmplMag, tmplMag, 0, 1, CV_MINMAX);
+
+        cv::Mat imgIdft;
+        imgPlanes[0] -= tmplPlanes[0];
+
+        cv::merge(imgPlanes, 2, imgComplex);
+        getDFTInv(imgComplex, imgIdft);
+*/
+        char controlChar = maybeImshow("Final", edgeSmooth) ;
+        controlChar = maybeImshow("Gray", masked );
+
         if (controlChar == 'q')
         {
             break;
@@ -858,7 +951,7 @@ void nkhMain(path inVid, path inFile, path outDir)
             cap.set(CV_CAP_PROP_POS_AVI_RATIO , 0);
         }
 
-*/
+
         fpsCalcEnd();
         cout<< timerFPS << endl;
         frameCount++;
