@@ -420,18 +420,19 @@ void whiteThresh2(cv::Mat& edgeSmooth, cv::Mat& saliencyOrig, cv::Mat& fin)
 
     cv::Mat tmpOrig(tmp);
 
-    tmpOrig = cv::Mat(tmp.size().height, tmp.size().width, CV_8U, cv::Scalar(255,255,255)) - tmpOrig;
+    tmpOrig = cv::Mat(tmp.size().height, tmp.size().width, CV_8U, cv::Scalar(255,255,255)) ;//- tmpOrig;
     /*
-//        cv::threshold(tmp, tmp, 65, 255, cv::THRESH_BINARY_INV);
 //        fin = tmp;
 //        fin = (hlsChann[1]>=100) & tmp;//worked
 */
-    hlsChann[1].copyTo(tmp, hlsChann[1]<=90);
-    cv::imshow("tmp", tmp);
-    cv::imshow("tmpOrig", tmpOrig);
-    cv::addWeighted(tmp, 0.7 , tmpOrig, 0.3, -10.0, fin);
+    hlsChann[1].copyTo(tmpOrig, hlsChann[1]<=87);
+    cv::threshold(tmpOrig, tmp, 1, 255, cv::THRESH_BINARY);
+    tmp &= (hlsChann[2]<=29);
+    tmp |= (hlsChann[2]<=36 & hlsChann[1]>=177);
+//    cv::addWeighted(tmp, 0.7 , tmpOrig, 0.3, -10.0, fin);
     //cv::addWeighted(saliency, 0.8, fin, 0.7, -10, fin); //Play With it! //TODO
-    cv::threshold(fin, fin, 170, 255, cv::THRESH_BINARY);
+//    cv::threshold(fin, fin, 170, 255, cv::THRESH_BINARY);
+    fin = tmp.clone();
 }
 
 void getMinS(cv::Mat& hls, cv::Mat* hlsChann, cv::Mat& hostMins)
