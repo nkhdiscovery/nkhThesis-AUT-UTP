@@ -39,7 +39,7 @@ using namespace boost::accumulators;
 #include "RF.h"
 
 /****************** nkhStart: global vars and defs ******************/
-#define RESIZE_FACTOR 5
+#define RESIZE_FACTOR 7
 #define _1080_x 1920
 #define _1080_y 1080
 #define _720_x 1280
@@ -472,7 +472,7 @@ void greenThresh1(cv::Mat& orig , cv::Mat& fin)
     cv::cvtColor(orig, hls, CV_BGR2HLS);
     //cv::split(hls, hlsChann);
     cv::Mat tmp;
-    cv::inRange(hls, cv::Scalar(75, 25, 63), cv::Scalar(98, 226, 255), tmp); //Threshold the color
+    cv::inRange(hls, cv::Scalar(75, 25, 63), cv::Scalar(92, 195, 255), tmp); //Threshold the color
     cv::threshold(tmp, tmp, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
     fin = tmp.clone();
     return;
@@ -646,6 +646,40 @@ cv::Mat colorReduce(const cv::Mat &image, int levels) {
     return reduced;
 }
 
+void nkhKmeans(cv::Mat& img, cv::Mat& dst)
+{
+    dst=img.clone();
+    int channels= dst.channels();
+    int pointsNum = dst.rows * dst.cols ;
+    cv::Mat points(dst.total(), 3, CV_32F);
+
+    points = dst.reshape(channels,pointsNum).clone() ;
+    points.convertTo(points,CV_32F);
+    cv::Mat labels;
+    cv::Mat centers;
+
+    cv::kmeans(points, 16, labels,
+               cv::TermCriteria(CV_TERMCRIT_EPS|CV_TERMCRIT_ITER,
+                                300, 1), 1,cv::KMEANS_PP_CENTERS, centers);
+
+    // map the centers
+    cv::Mat new_image(dst.size(), dst.type());
+    for( int row = 0; row != dst.rows; ++row){
+        auto new_image_begin = new_image.ptr<uchar>(row);
+        auto new_image_end = new_image_begin + new_image.cols * 3;
+        auto labels_ptr = labels.ptr<int>(row * dst.cols);
+
+        while(new_image_begin != new_image_end){
+            int const cluster_idx = *labels_ptr;
+            auto centers_ptr = centers.ptr<float>(cluster_idx);
+            new_image_begin[0] = centers_ptr[0];
+            new_image_begin[1] = centers_ptr[1];
+            new_image_begin[2] = centers_ptr[2];
+            new_image_begin += 3; ++labels_ptr;
+        }
+    }
+    dst=new_image.clone();
+}
 
 /*------------------- nkhEnd Saliency -------------------*/
 
@@ -770,8 +804,10 @@ void nkhMain(path inVid, path inFile, path outDir)
         dtfWrapper(frameResized, edgeSmooth);
 
         cv::Mat edgeSmoothLow;
-        cv::ximgproc::dtFilter(edgeSmooth, frameResized, edgeSmoothLow, 15, 30, cv::ximgproc::DTF_NC); //r 350. 50. nc
+        cv::ximgproc::dtFilter(edgeSmooth, frameResized, edgeSmoothLow, 10, 10, cv::ximgproc::DTF_NC); //r 350. 50. nc
 
+        edgeSmooth = colorReduce(edgeSmooth, 64);
+        edgeSmoothLow = colorReduce(edgeSmoothLow, 64);
 
         //SaliencyMap
         cv::Mat saliency, saliency72;
@@ -786,6 +822,7 @@ void nkhMain(path inVid, path inFile, path outDir)
         threshold( saliency, binMask, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU );
         //edgeAwareSmooth(frameResized, edgeSmooth);
 
+
         //threshold
         cv::Mat fin, whiteMask;
 
@@ -795,7 +832,7 @@ void nkhMain(path inVid, path inFile, path outDir)
         greenThresh1(edgeSmoothLow, greenMask);
 
         cv::Mat brownMask;
-        brownThresh1(edgeSmooth, brownMask);
+        brownThresh1(edgeSmoothLow, brownMask);
 
         /*
         //TODO: Weight if needed
@@ -817,11 +854,13 @@ void nkhMain(path inVid, path inFile, path outDir)
                                                     cv::Size(2*erosionDilation_size + 1,
                                                              2*erosionDilation_size+1));
 
-        cv::Mat colorMask = greenMask | whiteMask | brownMask ;
+        cv::Mat colorMask = greenMask ;//| whiteMask ;//| brownMask ;
+
+        /*
         cv::blur(colorMask, colorMask, cv::Size(12,12));
         cv::erode(colorMask, colorMask, element);
         cv::dilate(colorMask, colorMask, element);
-
+        */
         edgeSmoothLow.copyTo(masked, colorMask);
         cv::Mat twoThird = cv::Mat::zeros(edgeSmooth.rows, edgeSmooth.cols, edgeSmooth.type());
         twoThird(cv::Rect(0,0, twoThird.size().width, 2*twoThird.size().height/3.0)) = cv::Scalar::all(255);
@@ -830,7 +869,7 @@ void nkhMain(path inVid, path inFile, path outDir)
         saliency *= 3;
         saliency.convertTo( saliency, CV_8U );
         threshold( saliency, binMask, 0, 255, cv::THRESH_BINARY );
-        fin = colorMask & binMask;
+        fin = colorMask ;//& binMask;
         masked.release();
         twoThird.copyTo(masked, fin);
 
@@ -877,66 +916,11 @@ void nkhMain(path inVid, path inFile, path outDir)
 
         //Visualize
 
-        /*
-        cv::Mat frameResizedHalf_gray;
-        cv::cvtColor(frameResizedHalf, frameResizedHalf_gray, cv::COLOR_BGR2GRAY);
-        cv::cuda::GpuMat devFrame(frameResizedHalf_gray), devResult;
-        cv::Ptr<cv::cuda::TemplateMatching> matcherPtr = cv::cuda::createTemplateMatching(frameResizedHalf_gray.type(), CV_TM_CCORR);
-        matcherPtr->match(devFrame, devTemplate, devResult);
+        cv::Mat redKmean;
+        //nkhKmeans(edgeSmooth, redKmean);
 
-        double maxVal;
-        cv::Point location;
-        cv::cuda::minMaxLoc(devResult, 0, &maxVal, 0, &location);
-        if(maxVal > 0 )
-        {
-            cout << maxVal << endl ;
-        }
-        */
-
-/*
-        cv::Mat imgPlanes[2], tmplPlanes[2], imgComplex, tmplComplex, imgMag, tmplMag, imgAngle, tmplAngle;
-        getDFTMag(frameResized_gray, imgComplex, imgMag);
-
-        cv::Mat padded;                            //expand input image to optimal size
-        cv::copyMakeBorder(tmplGray, padded, (frameResized_gray.rows-tmplGray.rows)/2, (frameResized_gray.rows-tmplGray.rows)/2, (frameResized_gray.cols-tmplGray.cols)/2, (frameResized_gray.cols-tmplGray.cols)/2, cv::BORDER_CONSTANT, cv::Scalar::all(0));
-        getDFTMag(padded, tmplComplex, tmplMag);
-
-
-        cv::split(tmplComplex, tmplPlanes);
-        cv::split(imgComplex, imgPlanes);
-
-//        cv::magnitude(imgPlanes[0], imgPlanes[1], imgMag);
-//        cv::magnitude(tmplPlanes[0], tmplPlanes[1], tmplMag);
-//        cv::phase(imgPlanes[0], imgPlanes[1], imgAngle);
-//        cv::phase(tmplPlanes[0], tmplPlanes[1], tmplAngle);
-
-        cv::Mat magImg2, magTmpl2, angImg2, angTmpl2;
-        cv::cartToPolar(imgPlanes[0], imgPlanes[1], magImg2, angImg2);
-        cv::cartToPolar(tmplPlanes[0], tmplPlanes[1], magTmpl2, angTmpl2);
-
-        cv::Mat magDFTImg, magComplexImg, magPlanesImg[2];
-        getDFTMag(magImg2, magComplexImg, magDFTImg);
-        cv::Mat magDFTTmpl, magComplexTmpl, magPlanesTmpl[2];
-        getDFTMag(magTmpl2, magComplexTmpl, magDFTTmpl);
-        */
-
-/*
-        tmplMag += cv::Scalar::all(1); // switch to logarithmic scale
-        cv::log(tmplMag, tmplMag);
-        imgMag += cv::Scalar::all(1); // switch to logarithmic scale
-        cv::log(imgMag, imgMag);
-
-        cv::normalize(imgMag, imgMag, 0, 1, CV_MINMAX);
-        cv::normalize(tmplMag, tmplMag, 0, 1, CV_MINMAX);
-
-        cv::Mat imgIdft;
-        imgPlanes[0] -= tmplPlanes[0];
-
-        cv::merge(imgPlanes, 2, imgComplex);
-        getDFTInv(imgComplex, imgIdft);
-*/
-        char controlChar = maybeImshow("Final", edgeSmooth) ;
-        controlChar = maybeImshow("Gray", masked );
+        char controlChar = maybeImshow("Final", edgeSmoothLow) ;
+        controlChar = maybeImshow("Kmeans", masked );
 
         if (controlChar == 'q')
         {
@@ -950,7 +934,6 @@ void nkhMain(path inVid, path inFile, path outDir)
         {
             cap.set(CV_CAP_PROP_POS_AVI_RATIO , 0);
         }
-
 
         fpsCalcEnd();
         cout<< timerFPS << endl;
