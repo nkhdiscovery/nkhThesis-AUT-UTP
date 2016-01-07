@@ -412,36 +412,26 @@ void whiteThresh2(cv::Mat& edgeSmooth, cv::Mat& saliencyOrig, cv::Mat& fin)
     cv::Mat res1 =cv::Mat::zeros(chann[0].size().width, chann[0].size().height, CV_32F);
     cv::Mat res2=res1.clone(), res3=res1.clone(), tmp;
 
-//    cv::Scalar mean0 = cv::mean(chann[0]), mean1 = cv::mean(chann[1]), mean2 = cv::mean(chann[2]);
-
-    /*
-    chann[0] -= mean0.val[0];
-    chann[1] -= mean1.val[0];
-    chann[2] -= mean2.val[0];
-    */
-    cv::Mat reconst;
-
     cv::absdiff(chann[0], chann[1], res1);
     cv::absdiff(chann[1],chann[2], res2);
     cv::absdiff(chann[2],chann[0], res3);
     cv::add(res1, res2, tmp);
     cv::add(res3, tmp, tmp);
 
-//    double minVal, maxVal;
-
-//    cv::Mat newChan[3]={res1, res2, res3};
-//    cv::merge( newChan, 3, reconst);
     cv::Mat tmpOrig(tmp);
 
     tmpOrig = cv::Mat(tmp.size().height, tmp.size().width, CV_8U, cv::Scalar(255,255,255)) - tmpOrig;
+    /*
 //        cv::threshold(tmp, tmp, 65, 255, cv::THRESH_BINARY_INV);
 //        fin = tmp;
 //        fin = (hlsChann[1]>=100) & tmp;//worked
-    hlsChann[1].copyTo(tmp, hlsChann[1]<=100);
+*/
+    hlsChann[1].copyTo(tmp, hlsChann[1]<=90);
+    cv::imshow("tmp", tmp);
+    cv::imshow("tmpOrig", tmpOrig);
     cv::addWeighted(tmp, 0.7 , tmpOrig, 0.3, -10.0, fin);
-    cv::addWeighted(saliency, 0.8, fin, 0.7, -10, fin); //Play With it! //TODO
+    //cv::addWeighted(saliency, 0.8, fin, 0.7, -10, fin); //Play With it! //TODO
     cv::threshold(fin, fin, 170, 255, cv::THRESH_BINARY);
-
 }
 
 void getMinS(cv::Mat& hls, cv::Mat* hlsChann, cv::Mat& hostMins)
@@ -854,7 +844,7 @@ void nkhMain(path inVid, path inFile, path outDir)
                                                     cv::Size(2*erosionDilation_size + 1,
                                                              2*erosionDilation_size+1));
 
-        cv::Mat colorMask = greenMask ;//| whiteMask ;//| brownMask ;
+        cv::Mat colorMask = whiteMask ;//| greenMask ;//| brownMask ;
 
         /*
         cv::blur(colorMask, colorMask, cv::Size(12,12));
