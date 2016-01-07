@@ -916,8 +916,6 @@ void nkhMain(path inVid, path inFile, path outDir)
 
         //Visualize
 
-        cv::Mat redKmean;
-        //nkhKmeans(edgeSmooth, redKmean);
 
         char controlChar = maybeImshow("Final", edgeSmoothLow) ;
         controlChar = maybeImshow("Kmeans", masked );
