@@ -854,7 +854,7 @@ void nkhMain(path inVid, path inFile, path outDir)
                                                     cv::Size(2*erosionDilation_size + 1,
                                                              2*erosionDilation_size+1));
 
-        cv::Mat colorMask = brownMask ;// | whiteMask | greenMask ;// ;
+        cv::Mat colorMask = brownMask  | whiteMask | greenMask ;
 
         /*
         cv::blur(colorMask, colorMask, cv::Size(12,12));
