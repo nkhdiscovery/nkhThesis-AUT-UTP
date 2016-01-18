@@ -11,6 +11,8 @@ LIBS += -L/usr/local/lib -lopencv_cudabgsegm -lopencv_cudaobjdetect -lopencv_cud
 
 QMAKE_CXXFLAGS += -std=c++11 -Wall -O3 -march=corei7-avx
 QMAKE_LFLAGS += -fopenmp -pthread
+QMAKE_CXXFLAGS += -fopenmp
+LIBS += -fopenmp
 
 INCLUDEPATH +=  -I/usr/local/cuda-7.5/targets/x86_64-linux/include/ -I/usr/local/include/opencv -I/usr/local/include 3rd/ 3rd/external
 

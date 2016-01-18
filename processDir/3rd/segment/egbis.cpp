@@ -23,6 +23,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 #include "egbis/segment-image.h"
 #include "egbis/misc.h"
 #include "egbis/image.h"
+#include "nkhUtil.h"
+#ifdef _OPENMP
+# include <omp.h>
+#endif
 
 /****
  * OpenCV C++ Wrapper using the Mat class
@@ -31,7 +35,9 @@ image<rgb>* convertMatToNativeImage(const cv::Mat& input){
     int w = input.cols;
     int h = input.rows;
     image<rgb> *im = new image<rgb>(w,h);
-
+#ifdef _OPENMP
+#pragma omp parallel for collapse(2)
+#endif
     for(int i=0; i<h; i++)
     {
         for(int j=0; j<w; j++)
@@ -52,6 +58,9 @@ cv::Mat convertNativeToMat(image<rgb>* input){
     int h = input->height();
 	cv::Mat output(cv::Size(w,h),CV_8UC3);
 
+#ifdef _OPENMP
+#pragma omp parallel for collapse(2)
+#endif
     for(int i =0; i<h; i++){
         for(int j=0; j<w; j++){
             rgb curr = input->data[i*w+j];

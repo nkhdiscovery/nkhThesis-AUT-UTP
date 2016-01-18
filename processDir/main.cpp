@@ -71,6 +71,10 @@ int main(int argc, char *argv[])
         cerr << "NOT USING CUDA\n";
     }
 
+#ifdef _OPENMP
+    cout << "USINGOPENMP\n";
+#endif
+
     if (argc == 4)
     {
         path inVid(argv[1]), inFile(argv[2]), outDir(argv[3]);
@@ -92,6 +96,10 @@ int main(int argc, char *argv[])
 
 void nkhMain(path inVid, path inFile, path outDir)
 {
+
+    cv::setUseOptimized(true);
+    cv::setNumThreads(16);
+
     //Open the video file
     cv::VideoCapture cap(inVid.string());
     
@@ -172,18 +180,23 @@ void nkhMain(path inVid, path inFile, path outDir)
         }
         //TODO: implement with GPU
         //Mat edgeSmooth = measure<std::chrono::milliseconds>(edgeAwareSmooth, frameResized);
-        cv::Mat edgeSmooth, edgeSmooth_gray;
+        cv::Mat edgeSmooth, edgeSmooth_gray, edgeSmooth_resize2;
+
         dtfWrapper(frameResized, edgeSmooth);
 
-        /*
         cv::Mat edgeSmoothLow, edgeSmoothLow_gray;
         cv::ximgproc::dtFilter(frameResized, frameResized, edgeSmoothLow, 80, 190, cv::ximgproc::DTF_RF); //r 350. 50. nc
+
 
         cv::cvtColor(edgeSmooth, edgeSmooth_gray, cv::COLOR_BGR2GRAY);
         cv::cvtColor(edgeSmoothLow, edgeSmoothLow_gray, cv::COLOR_BGR2GRAY);
 
         edgeSmooth = colorReduce(edgeSmooth, 64);
         edgeSmoothLow = colorReduce(edgeSmoothLow, 64);
+
+        cv::resize(edgeSmoothLow, edgeSmooth_resize2, cv::Size(currentFrame.size().width/RESIZE_FACTOR2,
+                                                        currentFrame.size().height/RESIZE_FACTOR2));
+
 
         //SaliencyMap
         cv::Mat saliency, saliency72, saliencyOrig, saliency72Orig;
@@ -212,7 +225,7 @@ void nkhMain(path inVid, path inFile, path outDir)
 
         cv::Mat brownMask;
         brownThresh1(edgeSmoothLow, brownMask);
-        */
+
 
         /*
         //TODO: Weight if needed
@@ -350,13 +363,54 @@ void nkhMain(path inVid, path inFile, path outDir)
         frameResizedHalf.copyTo(maskedHalf, fin);
         */
 
-        cv::Mat egbisImage;
+        cv::Mat egbisImage, tmpOut;
         int num_ccs;
-        egbisImage = runEgbisOnMat(edgeSmooth, 1.5, 1000, 800, &num_ccs);
 
-/*
+//        egbisImage = runEgbisOnMat(edgeSmooth_resize2, 0.5, 1000, 1000, &num_ccs);
 
-        char controlChar = maybeImshow("edg", edgeSmooth) ;
+        cv::Ptr<cv::ximgproc::segmentation::GraphSegmentation> gs =
+                cv::ximgproc::segmentation::createGraphSegmentation(0.0, 10000, 10);
+        cv::Mat hsvFrameRes2, labFrameRes2;
+        cv::cvtColor(frameResized2, hsvFrameRes2, cv::COLOR_BGR2HSV);
+        cv::cvtColor(frameResized2, labFrameRes2, cv::COLOR_BGR2Lab);
+        cv::ximgproc::dtFilter(hsvFrameRes2, hsvFrameRes2, tmpOut,
+                               80, 50, cv::ximgproc::DTF_RF); //r 350. 50. nc
+
+       egbisImage = runEgbisOnMat(tmpOut, 0.5, 1000, 100, &num_ccs);
+       cv::cvtColor(tmpOut, hsvFrameRes2, cv::COLOR_HSV2BGR);
+//        gs->processImage(labFrameRes2, egbisImage);
+
+        /*
+        double min, max;
+        cv::minMaxLoc(egbisImage, &min, &max);
+
+        int nb_segs = (int)max + 1;
+
+//        std::cout << nb_segs << " segments" << std::endl;
+
+        tmpOut = cv::Mat::zeros(egbisImage.rows, egbisImage.cols, CV_8UC3);
+
+        uint* p;
+        uchar* p2;
+
+        for (int i = 0; i < egbisImage.rows; i++) {
+
+            p = egbisImage.ptr<uint>(i);
+            p2 = tmpOut.ptr<uchar>(i);
+
+            for (int j = 0; j < egbisImage.cols; j++) {
+                cv::Scalar color = color_mapping(p[j]);
+                p2[j*3] = color[0];
+                p2[j*3 + 1] = color[1];
+                p2[j*3 + 2] = color[2];
+            }
+        }
+        */
+
+        //cv::pyrMeanShiftFiltering(edgeSmooth, egbisImage, 90, 30, 1, cv::TermCriteria(cv::TermCriteria::MAX_ITER+cv::TermCriteria::EPS, 1, 1));
+///*
+        char controlChar = maybeImshow("edg", hsvFrameRes2) ;
+
         controlChar = maybeImshow("egbis", egbisImage) ;
         if (controlChar == 'q')
         {
@@ -370,7 +424,7 @@ void nkhMain(path inVid, path inFile, path outDir)
         {
             cap.set(CV_CAP_PROP_POS_AVI_RATIO , 0);
         }
-*/
+//*/
         fpsCalcEnd();
         cout<< timerFPS << endl;
         frameCount++;

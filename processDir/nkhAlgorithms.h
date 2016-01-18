@@ -8,6 +8,9 @@
 #include <opencv2/cudawarping.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/ximgproc.hpp>
+#include <opencv2/ximgproc/segmentation.hpp>
+#include <opencv2/core/utility.hpp>
+
 #include <opencv2/bioinspired.hpp>
 #include <opencv2/contrib/retina.hpp>
 #include <opencv2/cudaimgproc.hpp>
@@ -17,6 +20,9 @@
 #include <opencv2/cudaobjdetect.hpp>
 #include <opencv2/cudaoptflow.hpp>
 
+
+//using namespace cv;
+//using namespace cv::ximgproc::segmentation;
 
 //Edge aware smoothings
 #include "guidedfilter.h"
@@ -29,10 +35,6 @@
 #include "NC.h"
 #include "RF.h"
 
-#define DOMAIN_SIGMA_S 30 //30 orig// 20 green & brown
-#define DOMAIN_SIGMA_R 270 //350 orig //190 in green //290 brown
-#define DOMAIN_MAX_ITER 3
-#define DTF_METHOD "RC"
 
 #include "FrameObjects.h"
 #include "3rd/segment/egbis.h"
@@ -66,12 +68,19 @@ NOT_REGULAR_FILE,
 /****************** nkhEnd: macro utils ******************/
 
 /****************** nkhStart: global vars and defs ******************/
-#define RESIZE_FACTOR 5
+#define RESIZE_FACTOR 7
 #define RESIZE_FACTOR2 10
 #define _1080_x 1920
 #define _1080_y 1080
 #define _720_x 1280
 #define _720_y 720
+
+
+#define DOMAIN_SIGMA_S 100 //30 orig// 20 green & brown
+#define DOMAIN_SIGMA_R 350 //350 orig //190 in green //290 brown
+#define DOMAIN_MAX_ITER 3
+#define DTF_METHOD "NC"
+
 
 #define resizeAntRecFrom1080(rec) {rec.x /= RESIZE_FACTOR/1.5;\
     rec.y /= RESIZE_FACTOR/1.5;\
@@ -81,7 +90,7 @@ NOT_REGULAR_FILE,
 
 
 /******************** nkhStart opencv ********************/
-void nkhImshow(const char* windowName, cv::Mat& img)
+    void nkhImshow(const char* windowName, cv::Mat& img)
 {
     imshow(windowName, img);
 }
@@ -94,6 +103,44 @@ char maybeImshow(const char* windowName, cv::Mat& img, int waitKeyTime=20)
         return cvWaitKey(waitKeyTime);
     }
     return 0;
+}
+
+cv::Scalar hsv_to_rgb(cv::Scalar c) {
+    cv::Mat in(1, 1, CV_32FC3);
+    cv::Mat out(1, 1, CV_32FC3);
+
+    float * p = in.ptr<float>(0);
+
+    p[0] = c[0] * 360;
+    p[1] = c[1];
+    p[2] = c[2];
+
+    cv::cvtColor(in, out, cv::COLOR_HSV2RGB);
+
+   cv::Scalar t;
+
+    cv::Vec3f p2 = out.at<cv::Vec3f>(0, 0);
+
+    t[0] = (int)(p2[0] * 255);
+    t[1] = (int)(p2[1] * 255);
+    t[2] = (int)(p2[2] * 255);
+
+    return t;
+
+}
+
+cv::Scalar color_mapping(int segment_id) {
+
+    double base = (double)(segment_id) * 0.618033988749895 + 0.24443434;
+
+    return hsv_to_rgb(cv::Scalar(fmod(base, 1.2), 0.95, 0.80));
+
+}
+
+
+void nkhSegment(cv::Mat& in, cv::Mat& out)
+{
+
 }
 
 void matToMat2(cv::Mat& in, Mat2<float3>& out){

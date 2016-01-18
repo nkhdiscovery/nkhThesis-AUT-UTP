@@ -33,7 +33,9 @@ static void convolve_even(image<float> *src, image<float> *dst,
   int width = src->width();
   int height = src->height();
   int len = mask.size();
-
+#ifdef _OPENMP
+#pragma omp parallel for collapse(2)
+#endif
   for (int y = 0; y < height; y++) {
     for (int x = 0; x < width; x++) {
       float sum = mask[0] * imRef(src, x, y);
@@ -53,7 +55,9 @@ static void convolve_odd(image<float> *src, image<float> *dst,
   int width = src->width();
   int height = src->height();
   int len = mask.size();
-
+#ifdef _OPENMP
+#pragma omp parallel for collapse(2)
+#endif
   for (int y = 0; y < height; y++) {
     for (int x = 0; x < width; x++) {
       float sum = mask[0] * imRef(src, x, y);
