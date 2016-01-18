@@ -30,7 +30,13 @@ TEMPLATE = app
 
 SOURCES += main.cpp \
     guidedfilter.cpp \
-    3rd/external/io_png/io_png.c
+    3rd/external/io_png/io_png.c \
+    3rd/segment/egbis/disjoint-set.cpp \
+    3rd/segment/egbis/filter.cpp \
+    3rd/segment/egbis/misc.cpp \
+    3rd/segment/egbis/segment-graph.cpp \
+    3rd/segment/egbis/segment-image.cpp \
+    3rd/segment/egbis.cpp
 
 HEADERS += \
     nkhUtil.h \
@@ -46,4 +52,16 @@ HEADERS += \
     3rd/RF.h \
     3rd/common.h\
     3rd/rdtsc.h \
-    3rd/FunctionProfiling.h
+    3rd/FunctionProfiling.h \
+    3rd/segment/egbis/convolve.h \
+    3rd/segment/egbis/disjoint-set.h \
+    3rd/segment/egbis/filter.h \
+    3rd/segment/egbis/image.h \
+    3rd/segment/egbis/imconv.h \
+    3rd/segment/egbis/imutil.h \
+    3rd/segment/egbis/misc.h \
+    3rd/segment/egbis/pnmfile.h \
+    3rd/segment/egbis/segment-graph.h \
+    3rd/segment/egbis/segment-image.h \
+    3rd/segment/egbis.h \
+    nkhAlgorithms.h

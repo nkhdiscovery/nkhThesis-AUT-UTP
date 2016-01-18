@@ -17,20 +17,20 @@
 
 class PanelObject{
 protected:
-    string category;
-    string type;
+    std::string category;
+    std::string type;
     cv::Rect border;
-    string name;
+    std::string name;
 public:
-    PanelObject(string _objectCat, string _objectType, string _name, cv::Rect _border){
+    PanelObject(std::string _objectCat, std::string _objectType, std::string _name, cv::Rect _border){
         category = _objectCat;
         type = _objectType;
         border = _border;
         name = _name;
     }
-    string getCategory(){return category;}
-    string getType(){return type;}
-    string getName(){return name;}
+    std::string getCategory(){return category;}
+    std::string getType(){return type;}
+    std::string getName(){return name;}
     cv::Rect getBorder(){return border;}
 
 
