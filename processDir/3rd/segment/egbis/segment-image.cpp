@@ -34,11 +34,16 @@ rgb random_rgb(){
 }
 
 // dissimilarity measure between pixels
-static inline float diff(image<float> *r, image<float> *g, image<float> *b,
-			 int x1, int y1, int x2, int y2) {
-  return sqrt(square(imRef(r, x1, y1)-imRef(r, x2, y2)) +
-	      square(imRef(g, x1, y1)-imRef(g, x2, y2)) +
-	      square(imRef(b, x1, y1)-imRef(b, x2, y2)));
+static inline float diff(image<float> *l, image<float> *a, image<float> *b,
+             int x1, int y1, int x2, int y2) {
+
+//  return sqrt(square(imRef(r, x1, y1)-imRef(r, x2, y2)) +
+//	      square(imRef(g, x1, y1)-imRef(g, x2, y2)) +
+//	      square(imRef(b, x1, y1)-imRef(b, x2, y2)));
+    //TODO: 94 and 2000 from https://en.wikipedia.org/wiki/Color_difference,
+    //TODO: use OpenCV Class
+    float dl = imRef(l, x1, y1) - imRef(l, x2, y2);
+    float
 }
 
 /*

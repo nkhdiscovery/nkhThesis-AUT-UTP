@@ -374,7 +374,7 @@ void nkhMain(path inVid, path inFile, path outDir)
         cv::cvtColor(frameResized2, hsvFrameRes2, cv::COLOR_BGR2HSV);
         cv::cvtColor(frameResized2, labFrameRes2, cv::COLOR_BGR2Lab);
         cv::ximgproc::dtFilter(hsvFrameRes2, hsvFrameRes2, tmpOut,
-                               80, 50, cv::ximgproc::DTF_RF); //r 350. 50. nc
+                               80, 150, cv::ximgproc::DTF_RF); //r 350. 50. nc
 
        egbisImage = runEgbisOnMat(tmpOut, 0.5, 1000, 100, &num_ccs);
        cv::cvtColor(tmpOut, hsvFrameRes2, cv::COLOR_HSV2BGR);

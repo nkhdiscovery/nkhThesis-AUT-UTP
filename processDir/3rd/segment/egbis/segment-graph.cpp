@@ -33,8 +33,8 @@ bool operator<(const edge &a, const edge &b) {
  * edges: array of edges.
  * c: constant for treshold function.
  */
-universe *segment_graph(int num_vertices, int num_edges, edge *edges, 
-			float c) { 
+universe *segment_graph(int num_vertices, int num_edges, edge *edges,
+            float c) {
   // sort edges by weight
   std::sort(edges, edges + num_edges);
 
