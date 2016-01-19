@@ -376,8 +376,8 @@ void nkhMain(path inVid, path inFile, path outDir)
         cv::ximgproc::dtFilter(hsvFrameRes2, hsvFrameRes2, tmpOut,
                                80, 150, cv::ximgproc::DTF_RF); //r 350. 50. nc
 
-       egbisImage = runEgbisOnMat(tmpOut, 0.5, 1000, 100, &num_ccs);
-       cv::cvtColor(tmpOut, hsvFrameRes2, cv::COLOR_HSV2BGR);
+//       egbisImage = runEgbisOnMat(tmpOut, 0.5, 1000, 100, &num_ccs);
+//       cv::cvtColor(tmpOut, hsvFrameRes2, cv::COLOR_HSV2BGR);
 //        gs->processImage(labFrameRes2, egbisImage);
 
         /*
@@ -411,7 +411,7 @@ void nkhMain(path inVid, path inFile, path outDir)
 ///*
         char controlChar = maybeImshow("edg", hsvFrameRes2) ;
 
-        controlChar = maybeImshow("egbis", egbisImage) ;
+//        controlChar = maybeImshow("egbis", egbisImage) ;
         if (controlChar == 'q')
         {
             break;

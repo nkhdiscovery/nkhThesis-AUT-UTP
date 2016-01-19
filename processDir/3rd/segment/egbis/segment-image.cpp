@@ -18,7 +18,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 */
 
 #include "segment-image.h"
-
+#include <cmath>
 
 
 // random color
@@ -34,16 +34,46 @@ rgb random_rgb(){
 }
 
 // dissimilarity measure between pixels
-static inline float diff(image<float> *l, image<float> *a, image<float> *b,
+static inline float diff(image<float> *r, image<float> *g, image<float> *b,
              int x1, int y1, int x2, int y2) {
 
-//  return sqrt(square(imRef(r, x1, y1)-imRef(r, x2, y2)) +
-//	      square(imRef(g, x1, y1)-imRef(g, x2, y2)) +
-//	      square(imRef(b, x1, y1)-imRef(b, x2, y2)));
+  return sqrt(square(imRef(r, x1, y1)-imRef(r, x2, y2)) +
+          square(imRef(g, x1, y1)-imRef(g, x2, y2)) +
+          square(imRef(b, x1, y1)-imRef(b, x2, y2)));
     //TODO: 94 and 2000 from https://en.wikipedia.org/wiki/Color_difference,
     //TODO: use OpenCV Class
-    float dl = imRef(l, x1, y1) - imRef(l, x2, y2);
-    float
+  /*
+  float l1 = imRef(l, x1, y1), l2 = imRef(l, x2, y2),
+            a1 = imRef(a, x1, y1), a2 = imRef(a, x2, y2),
+            b1 = imRef(b, x1, y1), b2 = imRef(b, x2, y2);
+    double Pi2 = M_PI * 2;
+    double L_ = (l1 + l2) / 2.0;
+    double C1 = sqrt(pow(a1, 2) + pow(b1, 2));
+    double C2 = sqrt(pow(a2, 2) + pow(b2, 2));
+    double C_ = (C1 + C2) / 2.0;
+    double G = (1 - sqrt((pow(C_ , 7)) / (pow(C_ , 7) + 6103515625))) / 2.0;
+    double a1_ = a1 * (1 + G);
+    double a2_ = a2 * (1 + G);
+    double C1_ = sqrt(pow(a1_ , 2) + pow(b1, 2));
+    double C2_ = sqrt(pow(a2_ , 2) + pow(b2, 2));
+    double C__ = (C1_ + C2_) / 2.0;
+    double h1_ = atan2(b1, a1_);
+    h1_ = (h1_ < 0) ? h1_ + Pi2 : (h1_  >= Pi2) ? h1_ - Pi2 : h1_;
+    double h2_ = atan2(b2, a2_);
+    h2_ = (h2_ < 0) ? h2_ + Pi2 : (h2_  >= Pi2) ? h2_ - Pi2 : h2_;
+    double H__ = (fabs(h1_ - h2_) > M_PI) ? (h1_ + h2_ + Pi2) / 2.0 : (h1_ + h2_) / 2.0;
+    double T = 1 - 0.17 * cos(H__ - 0.5236) + 0.24 * cos(2 * H__) + 0.32 * cos(3 * H__ + 0.10472)  - 0.2 * cos(4 * H__ - 1.0995574);
+    double dh_ = h2_ - h1_;
+    dh_ = (abs(dh_) > M_PI && h2_  <= h1_) ? dh_ + Pi2 : (abs(dh_) > M_PI && h2_ > h1_) ? dh_ - Pi2 : dh_;
+    double dH_ = 2 * sqrt(C1_ * C2_) * sin(dh_ / 2.0);
+    double SL = 1 + ((0.015 * pow(L_ - 50, 2)) / (sqrt (20 + pow(L_ - 50, 2))));
+    double SC = 1 + 0.045 * C__;
+    double SH = 1 + 0.015 * C__ * T;
+    double dO = 1.0471976 * exp(-pow(( H__ - 4.799655) /  0.436332313 ,  2));
+    double RC = 2 * sqrt(pow(C__ , 7) / (pow(C__ , 7) + 6103515625));
+    double RT = -RC * sin(2 * dO);
+    return (sqrt(pow((l2 - l1) / SL , 2) + pow((C2_ - C1_) / SC , 2) + pow(dH_ / SH , 2) + RT * ((C2_ - C1_) / SC) * ((dH_) / SH)));
+    */
 }
 
 /*
