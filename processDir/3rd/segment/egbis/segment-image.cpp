@@ -34,14 +34,25 @@ rgb random_rgb(){
 }
 
 // dissimilarity measure between pixels
-static inline float diff(image<float> *r, image<float> *g, image<float> *b,
+static inline float diff(image<float> *l, image<float> *a, image<float> *b,
              int x1, int y1, int x2, int y2) {
 
-  return sqrt(square(imRef(r, x1, y1)-imRef(r, x2, y2)) +
-          square(imRef(g, x1, y1)-imRef(g, x2, y2)) +
-          square(imRef(b, x1, y1)-imRef(b, x2, y2)));
+//  return sqrt(square(imRef(r, x1, y1)-imRef(r, x2, y2)) +
+//          square(imRef(g, x1, y1)-imRef(g, x2, y2)) +
+//          square(imRef(b, x1, y1)-imRef(b, x2, y2)));
+
+
     //TODO: 94 and 2000 from https://en.wikipedia.org/wiki/Color_difference,
-    //TODO: use OpenCV Class
+    float l1 = imRef(l, x1, y1), l2 = imRef(l, x2, y2),
+              a1 = imRef(a, x1, y1), a2 = imRef(a, x2, y2),
+              b1 = imRef(b, x1, y1), b2 = imRef(b, x2, y2);
+
+    double C1 = sqrt(pow(a1, 2) + pow(b1, 2));
+    double C2 = sqrt(pow(a2, 2) + pow(b2, 2));
+    double H = pow(a1 - a2, 2) + pow(b1 - b2, 2) - pow(C1 - C2 , 2);
+    return (sqrt(pow((l1 - l2) / 1 , 2)
+                      + pow((C1- C2) / (1 + 0.45 * C1), 2) + H / pow ((1 + 0.15 * C1), 2)));
+
   /*
   float l1 = imRef(l, x1, y1), l2 = imRef(l, x2, y2),
             a1 = imRef(a, x1, y1), a2 = imRef(a, x2, y2),
@@ -97,9 +108,9 @@ universe *segmentation(image<rgb> *im, float sigma, float c, int min_size,
   image<float> *b = new image<float>(width, height);
 
   // smooth each color channel
-#ifdef _OPENMP
-#pragma omp parallel for collapse(2)
-#endif
+//#ifdef _OPENMP
+//#pragma omp parallel for collapse(2)
+//#endif
   for (int y = 0; y < height; y++) {
     for (int x = 0; x < width; x++) {
       imRef(r, x, y) = imRef(im, x, y).r;
@@ -156,9 +167,9 @@ universe *segmentation(image<rgb> *im, float sigma, float c, int min_size,
   universe *u = segment_graph(width*height, num, edges, c);
   
   // post process small components
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
+//#ifdef _OPENMP
+//#pragma omp parallel for
+//#endif
   for (int i = 0; i < num; i++) {
     int a = u->find(edges[i].a);
     int b = u->find(edges[i].b);
@@ -180,9 +191,9 @@ image<rgb>* visualize(universe *u, int width, int height){
   for (int i = 0; i < width*height; i++)
     colors[i] = random_rgb();
   
-#ifdef _OPENMP
-#pragma omp parallel for collapse(2)
-#endif
+//#ifdef _OPENMP
+//#pragma omp parallel for collapse(2)
+//#endif
   for (int y = 0; y < height; y++) {
     for (int x = 0; x < width; x++) {
       int comp = u->find(y * width + x);

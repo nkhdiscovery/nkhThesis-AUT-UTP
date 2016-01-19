@@ -196,8 +196,6 @@ void nkhMain(path inVid, path inFile, path outDir)
 
         cv::resize(edgeSmoothLow, edgeSmooth_resize2, cv::Size(currentFrame.size().width/RESIZE_FACTOR2,
                                                         currentFrame.size().height/RESIZE_FACTOR2));
-
-
         //SaliencyMap
         cv::Mat saliency, saliency72, saliencyOrig, saliency72Orig;
         computeSaliency(frameResized, 55 , saliency);
@@ -214,7 +212,6 @@ void nkhMain(path inVid, path inFile, path outDir)
         threshold( saliency, binMask, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU );
         //edgeAwareSmooth(frameResized, edgeSmooth);
 
-
         //threshold
         cv::Mat fin, whiteMask;
 
@@ -225,7 +222,6 @@ void nkhMain(path inVid, path inFile, path outDir)
 
         cv::Mat brownMask;
         brownThresh1(edgeSmoothLow, brownMask);
-
 
         /*
         //TODO: Weight if needed
@@ -287,7 +283,6 @@ void nkhMain(path inVid, path inFile, path outDir)
 
          */
 
-
         //MSER
 /*
         std::vector< std::vector< cv::Point> > contours;
@@ -338,9 +333,6 @@ void nkhMain(path inVid, path inFile, path outDir)
         //cv::ximgproc::dtFilter(edgeImg, edgeImg, edgeImg, 80, 190, cv::ximgproc::DTF_RF); //r 350. 50. nc
         */
 
-
-
-
         //Visualize
 
         //OpticalFlow
@@ -368,16 +360,20 @@ void nkhMain(path inVid, path inFile, path outDir)
 
 //        egbisImage = runEgbisOnMat(edgeSmooth_resize2, 0.5, 1000, 1000, &num_ccs);
 
-        cv::Ptr<cv::ximgproc::segmentation::GraphSegmentation> gs =
-                cv::ximgproc::segmentation::createGraphSegmentation(0.0, 10000, 10);
-        cv::Mat hsvFrameRes2, labFrameRes2;
-        cv::cvtColor(frameResized2, hsvFrameRes2, cv::COLOR_BGR2HSV);
-        cv::cvtColor(frameResized2, labFrameRes2, cv::COLOR_BGR2Lab);
-        cv::ximgproc::dtFilter(hsvFrameRes2, hsvFrameRes2, tmpOut,
-                               80, 150, cv::ximgproc::DTF_RF); //r 350. 50. nc
 
-//       egbisImage = runEgbisOnMat(tmpOut, 0.5, 1000, 100, &num_ccs);
-//       cv::cvtColor(tmpOut, hsvFrameRes2, cv::COLOR_HSV2BGR);
+        cv::Mat hsvFrameRes2, labFrameRes2;
+//        cv::cvtColor(frameResized2, hsvFrameRes2, cv::COLOR_BGR2HSV);
+        cv::cvtColor(frameResized2, labFrameRes2, cv::COLOR_BGR2Lab);
+        labFrameRes2.copyTo(tmpOut);
+        cv::ximgproc::dtFilter(labFrameRes2, labFrameRes2, tmpOut,
+                               20, 100, cv::ximgproc::DTF_RF); //20, 100, RF was best for lab, with: minSegSize*10, minSegSize ,1/200 of tmpOut size
+        cv::cvtColor(tmpOut, labFrameRes2, cv::COLOR_Lab2BGR);
+        int minSegSize = tmpOut.size().area()/200;
+        egbisImage = runEgbisOnMat(tmpOut, 0.0, minSegSize*10, minSegSize , &num_ccs); //0.5 , 200. 105 best
+
+//        cv::cvtColor(tmpOut, hsvFrameRes2, cv::COLOR_HSV2BGR);
+//        cv::Ptr<cv::ximgproc::segmentation::GraphSegmentation> gs =
+//                cv::ximgproc::segmentation::createGraphSegmentation(0.0, 10000, 10);
 //        gs->processImage(labFrameRes2, egbisImage);
 
         /*
@@ -409,9 +405,9 @@ void nkhMain(path inVid, path inFile, path outDir)
 
         //cv::pyrMeanShiftFiltering(edgeSmooth, egbisImage, 90, 30, 1, cv::TermCriteria(cv::TermCriteria::MAX_ITER+cv::TermCriteria::EPS, 1, 1));
 ///*
-        char controlChar = maybeImshow("edg", hsvFrameRes2) ;
+        char controlChar = maybeImshow("edg", labFrameRes2) ;
 
-//        controlChar = maybeImshow("egbis", egbisImage) ;
+        controlChar = maybeImshow("egbis", egbisImage) ;
         if (controlChar == 'q')
         {
             break;
