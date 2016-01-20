@@ -375,7 +375,7 @@ void nkhMain(path inVid, path inFile, path outDir)
 //        change above in dtfilter and below in seg, and test again. dont forget to get back to shape in joining.
 //        cv::cvtColor(tmpOut, labFrameRes2, cv::COLOR_Lab2BGR);
         int minSegSize = tmpOut.size().area()/200;
-        egbisImage = runEgbisOnMat(tmpOut, 0.5, 400, 105, &num_ccs); //0.5 , 200. 105 best, 200 50, 1000 50.
+        egbisImage = runEgbisOnMat(tmpOut, 0.5, 7000, 105, &num_ccs); //0.5 , 200. 105 best, 200 50, 1000 50.
 
         //400, 105, HSV,     return sqrt(square(b1-b2)); BESTT 48, dtf 20,100
 
