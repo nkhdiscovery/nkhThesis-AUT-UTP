@@ -47,11 +47,24 @@ static inline float diff(image<float> *l, image<float> *a, image<float> *b,
               a1 = imRef(a, x1, y1), a2 = imRef(a, x2, y2),
               b1 = imRef(b, x1, y1), b2 = imRef(b, x2, y2);
 
+    return sqrt(square(l1-l2) + square(a1-a2) + 100*square(b1-b2));// + square(b2-b1) + square(a1-a2)) ;
+
+    //NOTE: White: late S (hsv), Early V (HSV) , Good S (HLS)
+    // Bset test on 48: return sqrt(square(a1-a2) + square(b1-b2)); which is for hls
+    // Best test on 48: return sqrt(square(b1-b2) ); which is for hsv and 1000 50
+    // Even better with return sqrt(square(a1-a2) + square(square(b1-b2)) ); for both white and green. not good on 1 and 10, means still no white
+    // So return sqrt(square(aq1-a2)); and
+    //   also return sqrt(square(l1-l2) + square(a1-a2) + 100*square(b1-b2)); on hsv almost works for 10. with 200 & 100.
+    // That's why I should consider shape
+    // Try passing a multi-channel mixed from working channels above, like V from hsv and sth from LAB
+
+    /*
     double C1 = sqrt(pow(a1, 2) + pow(b1, 2));
     double C2 = sqrt(pow(a2, 2) + pow(b2, 2));
     double H = pow(a1 - a2, 2) + pow(b1 - b2, 2) - pow(C1 - C2 , 2);
     return (sqrt(pow((l1 - l2) / 1 , 2)
                       + pow((C1- C2) / (1 + 0.45 * C1), 2) + H / pow ((1 + 0.15 * C1), 2)));
+*/
 
   /*
   float l1 = imRef(l, x1, y1), l2 = imRef(l, x2, y2),

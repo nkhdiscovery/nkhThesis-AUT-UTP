@@ -361,15 +361,21 @@ void nkhMain(path inVid, path inFile, path outDir)
 //        egbisImage = runEgbisOnMat(edgeSmooth_resize2, 0.5, 1000, 1000, &num_ccs);
 
 
-        cv::Mat hsvFrameRes2, labFrameRes2;
-//        cv::cvtColor(frameResized2, hsvFrameRes2, cv::COLOR_BGR2HSV);
+        cv::Mat hsvFrameRes2, labFrameRes2, hlsFrameRes2;
+        cv::cvtColor(frameResized2, hsvFrameRes2, cv::COLOR_BGR2HSV);
         cv::cvtColor(frameResized2, labFrameRes2, cv::COLOR_BGR2Lab);
-        labFrameRes2.copyTo(tmpOut);
-        cv::ximgproc::dtFilter(labFrameRes2, labFrameRes2, tmpOut,
+        cv::cvtColor(frameResized2, hlsFrameRes2, cv::COLOR_BGR2HLS);
+        cv::Mat currTest(hsvFrameRes2);
+
+        currTest.copyTo(tmpOut);
+        cv::ximgproc::dtFilter(currTest, currTest, tmpOut,
                                20, 100, cv::ximgproc::DTF_RF); //20, 100, RF was best for lab, with: minSegSize*10, minSegSize ,1/200 of tmpOut size
-        cv::cvtColor(tmpOut, labFrameRes2, cv::COLOR_Lab2BGR);
+
+        ToDO:
+        change above in dtfilter and below in seg, and test again. dont forget to get back to shape in joining.
+//        cv::cvtColor(tmpOut, labFrameRes2, cv::COLOR_Lab2BGR);
         int minSegSize = tmpOut.size().area()/200;
-        egbisImage = runEgbisOnMat(tmpOut, 0.0, minSegSize*10, minSegSize , &num_ccs); //0.5 , 200. 105 best
+        egbisImage = runEgbisOnMat(tmpOut, 0.5, 200, 100 , &num_ccs); //0.5 , 200. 105 best, 200 50, 1000 50.
 
 //        cv::cvtColor(tmpOut, hsvFrameRes2, cv::COLOR_HSV2BGR);
 //        cv::Ptr<cv::ximgproc::segmentation::GraphSegmentation> gs =
@@ -405,7 +411,7 @@ void nkhMain(path inVid, path inFile, path outDir)
 
         //cv::pyrMeanShiftFiltering(edgeSmooth, egbisImage, 90, 30, 1, cv::TermCriteria(cv::TermCriteria::MAX_ITER+cv::TermCriteria::EPS, 1, 1));
 ///*
-        char controlChar = maybeImshow("edg", labFrameRes2) ;
+        char controlChar = maybeImshow("edg", tmpOut) ;
 
         controlChar = maybeImshow("egbis", egbisImage) ;
         if (controlChar == 'q')
