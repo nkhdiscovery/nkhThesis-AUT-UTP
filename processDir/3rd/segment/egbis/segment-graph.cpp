@@ -18,9 +18,22 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 */
 
 #include "segment-graph.h"
+#include <iostream>
+#include <opencv2/core.hpp>
 
 bool operator<(const edge &a, const edge &b) {
   return a.w < b.w;
+}
+
+
+float nkhThresh(universe *u, int a, float c)
+{
+
+    if(u->size(a)>500)
+    {
+
+    }
+    return THRESHOLD(u->size(a), c);
 }
 
 /*
@@ -33,13 +46,13 @@ bool operator<(const edge &a, const edge &b) {
  * edges: array of edges.
  * c: constant for treshold function.
  */
-universe *segment_graph(int num_vertices, int num_edges, edge *edges,
+universe *segment_graph(int w, int h, int num_edges, edge *edges,
             float c) {
   // sort edges by weight
   std::sort(edges, edges + num_edges);
-
+  int num_vertices = w * h;
   // make a disjoint-set forest
-  universe *u = new universe(num_vertices);
+  universe *u = new universe(w, h);
 
   // init thresholds
   float *threshold = new float[num_vertices];
@@ -58,7 +71,9 @@ universe *segment_graph(int num_vertices, int num_edges, edge *edges,
 	  (pedge->w <= threshold[b])) {
 	u->join(a, b);
 	a = u->find(a);
-	threshold[a] = pedge->w + THRESHOLD(u->size(a), c);
+    threshold[a] = pedge->w + nkhThresh(u, a, c);
+//    std::cout << threshold[a] << std::endl;
+   // std::cout << pedge->w << ", " << THRESHOLD(u->size(a), c) << std::endl;
       }
     }
   }

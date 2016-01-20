@@ -181,7 +181,7 @@ universe *segmentation(image<rgb> *im, float sigma, float c, int min_size,
   delete smooth_b;
 
   // segment
-  universe *u = segment_graph(width*height, num, edges, c);
+  universe *u = segment_graph(width, height, num, edges, c);
   
   // post process small components
 //#ifdef _OPENMP

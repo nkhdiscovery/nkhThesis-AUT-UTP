@@ -26,11 +26,12 @@ typedef struct {
   int rank;
   int p;
   int size;
+  int joinPref;
 } uni_elt;
 
 class universe {
 public:
-  universe(int elements);
+  universe(int w, int h);
   ~universe();
   int find(int x);  
   void join(int x, int y);
@@ -40,6 +41,7 @@ public:
 private:
   uni_elt *elts;
   int num;
+  int w,h;
 };
 
 #endif

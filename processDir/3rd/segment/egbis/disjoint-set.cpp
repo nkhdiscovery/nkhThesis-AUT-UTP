@@ -21,7 +21,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 
 // disjoint-set forests using union-by-rank and path compression (sort of).
 
-universe::universe(int elements) {
+universe::universe(int _w, int _h) {
+    w = _w;
+    h = _h;
+    int elements = w*h ;
   elts = new uni_elt[elements];
   num = elements;
   for (int i = 0; i < elements; i++) {
