@@ -47,7 +47,9 @@ static inline float diff(image<float> *l, image<float> *a, image<float> *b,
               a1 = imRef(a, x1, y1), a2 = imRef(a, x2, y2),
               b1 = imRef(b, x1, y1), b2 = imRef(b, x2, y2);
 
-    return sqrt(square(l1-l2) + square(a1-a2) + 100*square(b1-b2));// + square(b2-b1) + square(a1-a2)) ;
+    return sqrt(square(b1-b2));
+
+    //return sqrt(square(l1-l2) + square(a1-a2) + 100*square(b1-b2));// + square(b2-b1) + square(a1-a2)) ;
 
     //NOTE: White: late S (hsv), Early V (HSV) , Good S (HLS)
     // Bset test on 48: return sqrt(square(a1-a2) + square(b1-b2)); which is for hls
