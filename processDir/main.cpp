@@ -215,13 +215,13 @@ void nkhMain(path inVid, path inFile, path outDir)
         //threshold
         cv::Mat fin, whiteMask;
 
-        whiteThresh2(edgeSmooth, saliency72, whiteMask);
+        whiteThresh2(edgeSmoothLow, saliency72, whiteMask);
 
         cv::Mat greenMask;
-        greenThresh1(edgeSmoothLow, greenMask);
+        greenThresh1(edgeSmooth, greenMask);
 
         cv::Mat brownMask;
-        brownThresh1(edgeSmoothLow, brownMask);
+        brownThresh1(edgeSmooth, brownMask);
 
         /*
         //TODO: Weight if needed
@@ -237,14 +237,14 @@ void nkhMain(path inVid, path inFile, path outDir)
 
         */
 
-        /*
+//        /*
         int erosionDilation_size = 3;
         cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT,
                                                     cv::Size(2*erosionDilation_size + 1,
                                                              2*erosionDilation_size+1));
 
         cv::Mat colorMask = whiteMask | greenMask | brownMask;
-        */
+//        */
 
         /*
         cv::blur(colorMask, colorMask, cv::Size(12,12));
@@ -252,8 +252,8 @@ void nkhMain(path inVid, path inFile, path outDir)
         cv::dilate(colorMask, colorMask, element);
         */
 
-        /*
-        frameResized.copyTo(masked, colorMask);
+//        /*
+        edgeSmoothLow.copyTo(masked, colorMask);
         cv::Mat twoThird(colorMask);// = cv::Mat::zeros(edgeSmooth.rows, edgeSmooth.cols, edgeSmooth.type());
         twoThird(cv::Rect(0,2*twoThird.size().height/3.0, twoThird.size().width, twoThird.size().height/3.0)) = cv::Scalar::all(0);
         cv::Mat tmp;
@@ -266,7 +266,7 @@ void nkhMain(path inVid, path inFile, path outDir)
         fin = colorMask & twoThird ;//& binMask;
         masked.release();
         tmp.copyTo(masked, fin);
-        */
+//        */
 
 
         /*
@@ -360,22 +360,21 @@ void nkhMain(path inVid, path inFile, path outDir)
 
 //        egbisImage = runEgbisOnMat(edgeSmooth_resize2, 0.5, 1000, 1000, &num_ccs);
 
-
         cv::Mat hsvFrameRes2, labFrameRes2, hlsFrameRes2;
         cv::cvtColor(frameResized2, hsvFrameRes2, cv::COLOR_BGR2HSV);
         cv::cvtColor(frameResized2, labFrameRes2, cv::COLOR_BGR2Lab);
         cv::cvtColor(frameResized2, hlsFrameRes2, cv::COLOR_BGR2HLS);
-        cv::Mat currTest(hsvFrameRes2);
+        cv::Mat currTest(edgeSmooth_resize2);
 
         currTest.copyTo(tmpOut);
-        cv::ximgproc::dtFilter(currTest, currTest, tmpOut,
-                               20, 100, cv::ximgproc::DTF_RF); //20, 100, RF was best for lab, with: minSegSize*10, minSegSize ,1/200 of tmpOut size
+//        cv::ximgproc::dtFilter(currTest, currTest, tmpOut,
+//                              90, 400, cv::ximgproc::DTF_RF); //20, 100, RF was best for lab, with: minSegSize*10, minSegSize ,1/200 of tmpOut size
 
 //        ToDO:
 //        change above in dtfilter and below in seg, and test again. dont forget to get back to shape in joining.
 //        cv::cvtColor(tmpOut, labFrameRes2, cv::COLOR_Lab2BGR);
         int minSegSize = tmpOut.size().area()/200;
-        egbisImage = runEgbisOnMat(tmpOut, 0.5, 7000, 105, &num_ccs); //0.5 , 200. 105 best, 200 50, 1000 50.
+        egbisImage = runEgbisOnMat(tmpOut, 0.2, 1000, 105, &num_ccs); //0.5 , 200. 105 best, 200 50, 1000 50.
 
         //400, 105, HSV,     return sqrt(square(b1-b2)); BESTT 48, dtf 20,100
 
@@ -414,7 +413,7 @@ void nkhMain(path inVid, path inFile, path outDir)
 
         //cv::pyrMeanShiftFiltering(edgeSmooth, egbisImage, 90, 30, 1, cv::TermCriteria(cv::TermCriteria::MAX_ITER+cv::TermCriteria::EPS, 1, 1));
 ///*
-        char controlChar = maybeImshow("edg", tmpOut) ;
+        char controlChar = maybeImshow("edg", masked, 30) ;
 
         controlChar = maybeImshow("egbis", egbisImage) ;
         if (controlChar == 'q')

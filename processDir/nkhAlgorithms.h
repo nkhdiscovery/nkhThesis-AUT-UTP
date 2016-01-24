@@ -464,17 +464,25 @@ void whiteThresh2(cv::Mat& edgeSmooth, cv::Mat& saliencyOrig, cv::Mat& fin)
     cv::add(res1, res2, tmp);
     cv::add(res3, tmp, tmp);
 
+    tmp.convertTo(tmp, CV_32F);
 //    double minVal, maxVal;
 
 //    cv::Mat newChan[3]={res1, res2, res3};
 //    cv::merge( newChan, 3, reconst);
     cv::Mat tmpOrig(tmp);
+    tmp /= 70.0; //D=20
+//    cout << tmp << endl << "______________________________________" << endl;
+//    tmpOrig = cv::Mat(tmp.size().height, tmp.size().width, CV_8U, cv::Scalar(255,255,255)) - tmpOrig;
+//        cv::threshold(tmp, tmp, 20, 255, cv::THRESH_BINARY_INV);
+        fin = (tmp) <1 & (hlsChann[1]>=70) ;
+        cv::addWeighted(saliency, 0.4, fin, 0.7, -10, fin); //Play With it! //TODO
+        cv::threshold(fin, fin, 170, 255, cv::THRESH_BINARY);
 
-    tmpOrig = cv::Mat(tmp.size().height, tmp.size().width, CV_8U, cv::Scalar(255,255,255)) - tmpOrig;
-//        cv::threshold(tmp, tmp, 65, 255, cv::THRESH_BINARY_INV);
-//        fin = tmp;
+        return;
+
 //        fin = (hlsChann[1]>=100) & tmp;//worked
-    hlsChann[1].copyTo(tmp, hlsChann[1]<=100);
+        return;
+    hlsChann[1].copyTo(tmp, hlsChann[1]>80);
     cv::addWeighted(tmp, 0.7 , tmpOrig, 0.3, -10.0, fin);
     cv::addWeighted(saliency, 0.8, fin, 0.7, -10, fin); //Play With it! //TODO
     cv::threshold(fin, fin, 170, 255, cv::THRESH_BINARY);
@@ -509,7 +517,7 @@ void greenThresh1(cv::Mat& orig , cv::Mat& fin)
     cv::cvtColor(orig, hls, CV_BGR2HLS);
     //cv::split(hls, hlsChann);
     cv::Mat tmp;
-    cv::inRange(hls, cv::Scalar(75, 25, 63), cv::Scalar(92, 195, 255), tmp); //Threshold the color
+    cv::inRange(hls, cv::Scalar(75, 25, 63), cv::Scalar(80, 195, 255), tmp); //Threshold the color
     cv::threshold(tmp, tmp, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
     fin = tmp.clone();
     return;
@@ -529,7 +537,7 @@ void brownThresh1(cv::Mat& orig , cv::Mat& fin)
 
     cv::cvtColor(orig, hls, CV_BGR2HLS);
     cv::split(hls, hlsChann);
-    cv::inRange(hls, cv::Scalar(0, 25, 55), cv::Scalar(13, 216, 255), fin); //Threshold the color
+    cv::inRange(hls, cv::Scalar(0, 10, 55), cv::Scalar(13, 70, 255), fin); //Threshold the color
 //    fin = (tmp1 & (hlsChann[1]<155) & (hlsChann[2]< 100) & (hlsChann[1]>=25)) | fin ;//& (hlsChann[0]<=90);// (hlsChann[2]>=15)& ;
 //    fin |= (hlsChann[1]<43) & (hlsChann[2]<128) & (hlsChann[0] <89);
     return;
