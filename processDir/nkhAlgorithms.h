@@ -8,7 +8,7 @@
 #include <opencv2/cudawarping.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/ximgproc.hpp>
-#include <opencv2/ximgproc/segmentation.hpp>
+//#include <opencv2/ximgproc/segmentation.hpp>
 #include <opencv2/core/utility.hpp>
 
 #include <opencv2/bioinspired.hpp>
@@ -77,7 +77,7 @@ NOT_REGULAR_FILE,
 
 
 #define DOMAIN_SIGMA_S 100 //30 orig// 20 green & brown
-#define DOMAIN_SIGMA_R 350 //350 orig //190 in green //290 brown
+#define DOMAIN_SIGMA_R 250 //350 orig //190 in green //290 brown
 #define DOMAIN_MAX_ITER 3
 #define DTF_METHOD "NC"
 
@@ -517,7 +517,7 @@ void greenThresh1(cv::Mat& orig , cv::Mat& fin)
     cv::cvtColor(orig, hls, CV_BGR2HLS);
     //cv::split(hls, hlsChann);
     cv::Mat tmp;
-    cv::inRange(hls, cv::Scalar(75, 25, 63), cv::Scalar(80, 195, 255), tmp); //Threshold the color
+    cv::inRange(hls, cv::Scalar(75, 25, 63), cv::Scalar(91, 195, 255), tmp); //Threshold the color
     cv::threshold(tmp, tmp, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
     fin = tmp.clone();
     return;
@@ -537,7 +537,7 @@ void brownThresh1(cv::Mat& orig , cv::Mat& fin)
 
     cv::cvtColor(orig, hls, CV_BGR2HLS);
     cv::split(hls, hlsChann);
-    cv::inRange(hls, cv::Scalar(0, 10, 55), cv::Scalar(13, 70, 255), fin); //Threshold the color
+    cv::inRange(hls, cv::Scalar(0, 10, 55), cv::Scalar(13, 112, 255), fin); //Threshold the color
 //    fin = (tmp1 & (hlsChann[1]<155) & (hlsChann[2]< 100) & (hlsChann[1]>=25)) | fin ;//& (hlsChann[0]<=90);// (hlsChann[2]>=15)& ;
 //    fin |= (hlsChann[1]<43) & (hlsChann[2]<128) & (hlsChann[0] <89);
     return;

@@ -66,4 +66,5 @@ HEADERS += \
     3rd/segment/egbis/segment-graph.h \
     3rd/segment/egbis/segment-image.h \
     3rd/segment/egbis.h \
-    nkhAlgorithms.h
+    nkhAlgorithms.h \
+    egbiscv.h

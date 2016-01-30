@@ -29,9 +29,9 @@ bool operator<(const edge &a, const edge &b) {
 float nkhThresh(universe *u, int a, float c)
 {
 
-    if(u->size(a)>500)
+    if(u->size(a)==2)
     {
-
+        std::cout<< a << std::endl;
     }
     return THRESHOLD(u->size(a), c);
 }

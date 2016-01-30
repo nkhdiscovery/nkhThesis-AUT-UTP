@@ -191,15 +191,28 @@ void nkhMain(path inVid, path inFile, path outDir)
         cv::cvtColor(edgeSmooth, edgeSmooth_gray, cv::COLOR_BGR2GRAY);
         cv::cvtColor(edgeSmoothLow, edgeSmoothLow_gray, cv::COLOR_BGR2GRAY);
 
-        edgeSmooth = colorReduce(edgeSmooth, 64);
-        edgeSmoothLow = colorReduce(edgeSmoothLow, 64);
+//        edgeSmooth = colorReduce(edgeSmooth, 64);
+//        edgeSmoothLow = colorReduce(edgeSmoothLow, 64);
 
         cv::resize(edgeSmoothLow, edgeSmooth_resize2, cv::Size(currentFrame.size().width/RESIZE_FACTOR2,
-                                                        currentFrame.size().height/RESIZE_FACTOR2));
+
+                                                               currentFrame.size().height/RESIZE_FACTOR2));
+
+
+        cv::Mat hsvFrameRes2, labFrameRes2, hlsFrameRes2, hsvResized, saliencyV;
+        cv::cvtColor(frameResized2, hsvFrameRes2, cv::COLOR_BGR2HSV);
+        cv::cvtColor(frameResized2, hsvResized, cv::COLOR_BGR2HLS);
+        cv::cvtColor(frameResized2, labFrameRes2, cv::COLOR_BGR2Lab);
+        cv::cvtColor(frameResized2, hlsFrameRes2, cv::COLOR_BGR2HLS);
+        cv::Mat chans[3];
+        cv::split(hsvResized, chans);
         //SaliencyMap
         cv::Mat saliency, saliency72, saliencyOrig, saliency72Orig;
         computeSaliency(frameResized, 55 , saliency);
-        computeSaliency(frameResized, 64 , saliency72);
+        computeSaliency(frameResized, 100 , saliency72);
+
+         computeSaliency(edgeSmoothLow, 64 , saliencyV);
+
         saliencyOrig = saliency.clone();
         saliency72Orig = saliency72.clone();
 
@@ -218,10 +231,10 @@ void nkhMain(path inVid, path inFile, path outDir)
         whiteThresh2(edgeSmoothLow, saliency72, whiteMask);
 
         cv::Mat greenMask;
-        greenThresh1(edgeSmooth, greenMask);
+        greenThresh1(edgeSmoothLow, greenMask);
 
         cv::Mat brownMask;
-        brownThresh1(edgeSmooth, brownMask);
+        brownThresh1(edgeSmoothLow, brownMask);
 
         /*
         //TODO: Weight if needed
@@ -243,7 +256,7 @@ void nkhMain(path inVid, path inFile, path outDir)
                                                     cv::Size(2*erosionDilation_size + 1,
                                                              2*erosionDilation_size+1));
 
-        cv::Mat colorMask = whiteMask | greenMask | brownMask;
+        cv::Mat colorMask = /*whiteMask | *//*greenMask |*/  brownMask;
 //        */
 
         /*
@@ -360,11 +373,7 @@ void nkhMain(path inVid, path inFile, path outDir)
 
 //        egbisImage = runEgbisOnMat(edgeSmooth_resize2, 0.5, 1000, 1000, &num_ccs);
 
-        cv::Mat hsvFrameRes2, labFrameRes2, hlsFrameRes2;
-        cv::cvtColor(frameResized2, hsvFrameRes2, cv::COLOR_BGR2HSV);
-        cv::cvtColor(frameResized2, labFrameRes2, cv::COLOR_BGR2Lab);
-        cv::cvtColor(frameResized2, hlsFrameRes2, cv::COLOR_BGR2HLS);
-        cv::Mat currTest(edgeSmooth_resize2);
+        cv::Mat currTest(hlsFrameRes2);
 
         currTest.copyTo(tmpOut);
 //        cv::ximgproc::dtFilter(currTest, currTest, tmpOut,
@@ -374,7 +383,8 @@ void nkhMain(path inVid, path inFile, path outDir)
 //        change above in dtfilter and below in seg, and test again. dont forget to get back to shape in joining.
 //        cv::cvtColor(tmpOut, labFrameRes2, cv::COLOR_Lab2BGR);
         int minSegSize = tmpOut.size().area()/200;
-        egbisImage = runEgbisOnMat(tmpOut, 0.2, 1000, 105, &num_ccs); //0.5 , 200. 105 best, 200 50, 1000 50.
+        //egbisImage = runEgbisOnMat(tmpOut, 0.2, 1000, 105, &num_ccs); //0.5 , 200. 105 best, 200 50, 1000 50.
+
 
         //400, 105, HSV,     return sqrt(square(b1-b2)); BESTT 48, dtf 20,100
 
@@ -413,9 +423,10 @@ void nkhMain(path inVid, path inFile, path outDir)
 
         //cv::pyrMeanShiftFiltering(edgeSmooth, egbisImage, 90, 30, 1, cv::TermCriteria(cv::TermCriteria::MAX_ITER+cv::TermCriteria::EPS, 1, 1));
 ///*
-        char controlChar = maybeImshow("edg", masked, 30) ;
+        char controlChar = maybeImshow("Orig", frameResized, 30) ;
 
-        controlChar = maybeImshow("egbis", egbisImage) ;
+//        saliency72Orig *=255;
+        controlChar = maybeImshow("Saliency", egbisImage) ;
         if (controlChar == 'q')
         {
             break;
