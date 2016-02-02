@@ -68,8 +68,8 @@ NOT_REGULAR_FILE,
 /****************** nkhEnd: macro utils ******************/
 
 /****************** nkhStart: global vars and defs ******************/
-#define RESIZE_FACTOR 7
-#define RESIZE_FACTOR2 10
+#define RESIZE_FACTOR 8
+#define RESIZE_FACTOR2 8
 #define _1080_x 1920
 #define _1080_y 1080
 #define _720_x 1280
@@ -474,18 +474,18 @@ void whiteThresh2(cv::Mat& edgeSmooth, cv::Mat& saliencyOrig, cv::Mat& fin)
 //    cout << tmp << endl << "______________________________________" << endl;
 //    tmpOrig = cv::Mat(tmp.size().height, tmp.size().width, CV_8U, cv::Scalar(255,255,255)) - tmpOrig;
 //        cv::threshold(tmp, tmp, 20, 255, cv::THRESH_BINARY_INV);
-        fin = (tmp) <1 & (hlsChann[1]>=70) ;
-        cv::addWeighted(saliency, 0.4, fin, 0.7, -10, fin); //Play With it! //TODO
+        fin = (tmp) <1 ;//& (hlsChann[1]>=70) ;
+        //cv::addWeighted(saliency, 0.4, fin, 0.7, -10, fin); //Play With it! //TODO
         cv::threshold(fin, fin, 170, 255, cv::THRESH_BINARY);
 
         return;
 
-//        fin = (hlsChann[1]>=100) & tmp;//worked
-        return;
-    hlsChann[1].copyTo(tmp, hlsChann[1]>80);
-    cv::addWeighted(tmp, 0.7 , tmpOrig, 0.3, -10.0, fin);
-    cv::addWeighted(saliency, 0.8, fin, 0.7, -10, fin); //Play With it! //TODO
-    cv::threshold(fin, fin, 170, 255, cv::THRESH_BINARY);
+////        fin = (hlsChann[1]>=100) & tmp;//worked
+//        return;
+//    hlsChann[1].copyTo(tmp, hlsChann[1]>80);
+//    cv::addWeighted(tmp, 0.7 , tmpOrig, 0.3, -10.0, fin);
+//    cv::addWeighted(saliency, 0.8, fin, 0.7, -10, fin); //Play With it! //TODO
+//    cv::threshold(fin, fin, 170, 255, cv::THRESH_BINARY);
 
 }
 

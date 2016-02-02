@@ -3,50 +3,76 @@
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include <opencv2/contrib/contrib.hpp>
+//#include <opencv2/contrib/contrib.hpp>
 #include <iostream>
 #include <stdlib.h>
 #include <time.h>
+#include <set>
 using namespace cv;
 using namespace std;
 
-cv::Scalar hsv_to_rgb(cv::Scalar c) {
-    cv::Mat in(1, 1, CV_32FC3);
-    cv::Mat out(1, 1, CV_32FC3);
+//cv::Scalar hsv_to_rgb(cv::Scalar c) {
+//    cv::Mat in(1, 1, CV_32FC3);
+//    cv::Mat out(1, 1, CV_32FC3);
 
-    float * p = in.ptr<float>(0);
+//    float * p = in.ptr<float>(0);
 
-    p[0] = c[0] * 360;
-    p[1] = c[1];
-    p[2] = c[2];
+//    p[0] = c[0] * 360;
+//    p[1] = c[1];
+//    p[2] = c[2];
 
-    cv::cvtColor(in, out, cv::COLOR_HSV2RGB);
+//    cv::cvtColor(in, out, cv::COLOR_HSV2RGB);
 
-   cv::Scalar t;
+//   cv::Scalar t;
 
-    cv::Vec3f p2 = out.at<cv::Vec3f>(0, 0);
+//    cv::Vec3f p2 = out.at<cv::Vec3f>(0, 0);
 
-    t[0] = (int)(p2[0] * 255);
-    t[1] = (int)(p2[1] * 255);
-    t[2] = (int)(p2[2] * 255);
+//    t[0] = (int)(p2[0] * 255);
+//    t[1] = (int)(p2[1] * 255);
+//    t[2] = (int)(p2[2] * 255);
 
-    return t;
+//    return t;
 
-}
+//}
 
-cv::Scalar color_mapping(int segment_id) {
+//cv::Scalar color_mapping(int segment_id) {
 
-    double base = (double)(segment_id) * 0.618033988749895 + 0.24443434;
+//    double base = (double)(segment_id) * 0.618033988749895 + 0.24443434;
 
-    return hsv_to_rgb(cv::Scalar(fmod(base, 1.2), 0.95, 0.80));
+//    return hsv_to_rgb(cv::Scalar(fmod(base, 1.2), 0.95, 0.80));
 
-}
+//}
+
+class nkhPoint{
+public:
+    int x, y;
+    nkhPoint() {}
+    nkhPoint(int _x, int _y)
+    {
+        x = _x;
+        y = _y;
+    }
+    bool operator <(const nkhPoint& p) const{
+        if(x != p.x)
+            return x < p.x;
+        else
+            return y <= p.y;
+    }
+};
+
 // Represent an edge between two pixels
 class Edge {
 public:
     int from;
     int to;
+    nkhPoint pFrom, pTo;
     float weight;
+
+    void setPoints(nkhPoint to, nkhPoint from)
+    {
+        pTo = to;
+        pFrom = from;
+    }
 
     bool operator <(const Edge& e) const {
         return weight < e.weight;
@@ -58,12 +84,17 @@ class PointSetElement {
 public:
     int p;
     int size;
+    set<nkhPoint> coordSet;
 
     PointSetElement() { }
-
+    ~PointSetElement() {coordSet.clear();}
     PointSetElement(int p_) {
         p = p_;
         size = 1;
+    }
+    void insertCoord(nkhPoint point)
+    {
+        coordSet.insert(point);
     }
 };
 
@@ -72,7 +103,7 @@ class PointSet {
 public:
     PointSet(int nb_elements_);
     ~PointSet();
-
+    PointSet(){ mapping = NULL; }
     int nb_elements;
 
     // Return the main point of the point's set
@@ -84,21 +115,68 @@ public:
     // Return the set size of a set (based on the main point)
     int size(unsigned int p) { return mapping[p].size; }
 
+    void insertCoord(nkhPoint point, int p)
+    {
+        mapping[p].insertCoord(point);
+    }
+
 private:
     PointSetElement* mapping;
 
 };
 
-class GraphSegmentationImpl{
+PointSet::PointSet(int nb_elements_) {
+    nb_elements = nb_elements_;
+
+    mapping = new PointSetElement[nb_elements];
+
+    for ( int i = 0; i < nb_elements; i++) {
+        mapping[i] = PointSetElement(i);
+    }
+}
+
+PointSet::~PointSet() {
+    delete [] mapping;
+}
+
+int PointSet::getBasePoint( int p) {
+
+    int base_p = p;
+
+    while (base_p != mapping[base_p].p) {
+        base_p = mapping[base_p].p;
+    }
+
+    // Save mapping for faster acces later
+    mapping[p].p = base_p;
+
+    return base_p;
+}
+
+void PointSet::joinPoints(int p_a, int p_b) {
+
+    // Always target smaller set, to avoid redirection in getBasePoint
+    if (mapping[p_a].size < mapping[p_b].size)
+        swap(p_a, p_b);
+
+    mapping[p_b].p = p_a;
+    mapping[p_a].size += mapping[p_b].size;
+    mapping[p_a].coordSet.insert(mapping[p_b].coordSet.begin(),mapping[p_b].coordSet.end());
+
+    nb_elements--;
+}
+
+
+class nkhGraphSegmentationImpl{
 public:
-    GraphSegmentationImpl() {
+    nkhGraphSegmentationImpl() {
         sigma = 0.5;
         k = 300;
         min_size = 100;
         name_ = "GraphSegmentation";
     }
 
-    ~GraphSegmentationImpl() {
+    ~nkhGraphSegmentationImpl() {
     };
 
     virtual void processImage(InputArray src, Mat &prun, OutputArray dst);
@@ -137,7 +215,7 @@ private:
     void filter(const Mat &img, Mat &img_filtered);
 
     // Build the graph between each pixels
-    void buildGraph(Edge **edges, int &nb_edges, const Mat &prun, const Mat &img_filtered);
+    void buildGraph(Edge **edges, int &nb_edges, const Mat &costExtra, const Mat &img_filtered);
 
     // Segment the graph
     void segmentGraph(Edge * edges, const int &nb_edges, const Mat & img_filtered, PointSet **es);
@@ -149,7 +227,7 @@ private:
     void finalMapping(PointSet *es, Mat &output);
 };
 
-void GraphSegmentationImpl::filter(const Mat &img, Mat &img_filtered) {
+void nkhGraphSegmentationImpl::filter(const Mat &img, Mat &img_filtered) {
 
     Mat img_converted;
 
@@ -160,7 +238,7 @@ void GraphSegmentationImpl::filter(const Mat &img, Mat &img_filtered) {
     GaussianBlur(img_converted, img_filtered, Size(0, 0), sigma, sigma);
 }
 
-void GraphSegmentationImpl::buildGraph(Edge **edges, int &nb_edges, const Mat &prun, const Mat &img_filtered) {
+void nkhGraphSegmentationImpl::buildGraph(Edge **edges, int &nb_edges, const Mat &costExtra, const Mat &img_filtered) {
 
     *edges = new Edge[img_filtered.rows * img_filtered.cols * 4];
 
@@ -168,10 +246,11 @@ void GraphSegmentationImpl::buildGraph(Edge **edges, int &nb_edges, const Mat &p
     nb_edges = 0;
     int counter = 0;
     int nb_channels = img_filtered.channels();
+    int nb_cost_channels = costExtra.channels();
 
     for (int i = 0; i < (int)img_filtered.rows; i++) {
         const float* p = img_filtered.ptr<float>(i);
-        const uchar* ptrPrun = prun.ptr<uchar>(i);
+        const uchar* ptrCost = costExtra.ptr<uchar>(i);
 
         for (int j = 0; j < (int)img_filtered.cols; j++) {
 
@@ -185,14 +264,7 @@ void GraphSegmentationImpl::buildGraph(Edge **edges, int &nb_edges, const Mat &p
                     if (i2 >= 0 && i2 < img_filtered.rows && j2 >= 0 && j2 < img_filtered.cols) {
 
                         const float* p2 = img_filtered.ptr<float>(i2);
-                        const uchar* ptr2Prun = prun.ptr<uchar>(i2);
-                        //pruning matrix condition check
-//                        cout << (int)ptrPrun[j] <<" , " <<(int)ptr2Prun[j2] << endl ;
-//                        if( rand() % 7 && ptrPrun[j] >0 && ptr2Prun[j2] > 0)
-//                        if( p[j * + channel] - p2[j2 * nb_channels + channel])
-//                        {
-//                            continue;
-//                        }
+                        const uchar* ptr2Cost = costExtra.ptr<uchar>(i2);
 
                         float tmp_total = 0;
 
@@ -203,12 +275,26 @@ void GraphSegmentationImpl::buildGraph(Edge **edges, int &nb_edges, const Mat &p
                         float diff = 0;
                         diff = sqrt(tmp_total);
 
-                        if(rand() % 50 < diff) continue;
+                        for ( int channel = 0; channel < nb_cost_channels; channel++) {
+                            tmp_total += ( (ptrCost[j * nb_cost_channels + channel]
+                                    == 255) && (ptr2Cost[j2 * nb_cost_channels + channel] == 255) && tmp_total<=5) ? 0.1*tmp_total : 2000.0*tmp_total;
+//                            cout << (int)ptr2Cost[j2 * nb_cost_channels + channel] << " " ;
+                        }
+
+                        //pruning matrix condition check
+//                        cout << (int)ptrPrun[j] <<" , " <<(int)ptr2Prun[j2] << endl ;
+//                        if( rand() % 7 && ptrPrun[j] >0 && ptr2Prun[j2] > 0)
+//                        if( ptr2Prun[j] | ptr2Prun[j2])
+//                        {
+//                            continue;
+//                        }
+
+//                        if(rand()%50 < diff) continue;
 
                         (*edges)[nb_edges].weight = diff;
                         (*edges)[nb_edges].from = i * img_filtered.cols +  j;
                         (*edges)[nb_edges].to = i2 * img_filtered.cols + j2;
-
+                        (*edges)[nb_edges].setPoints(nkhPoint(i,j), nkhPoint(i2,j2));
                         nb_edges++;
                     }
 
@@ -217,10 +303,9 @@ void GraphSegmentationImpl::buildGraph(Edge **edges, int &nb_edges, const Mat &p
             }
         }
     }
-    cout << nb_edges << endl;
 }
 
-void GraphSegmentationImpl::segmentGraph(Edge *edges, const int &nb_edges, const Mat &img_filtered, PointSet **es) {
+void nkhGraphSegmentationImpl::segmentGraph(Edge *edges, const int &nb_edges, const Mat &img_filtered, PointSet **es) {
 
     int total_points = ( int)(img_filtered.rows * img_filtered.cols);
 
@@ -240,6 +325,9 @@ void GraphSegmentationImpl::segmentGraph(Edge *edges, const int &nb_edges, const
 
         int p_a = (*es)->getBasePoint(edges[i].from);
         int p_b = (*es)->getBasePoint(edges[i].to);
+        (*es)->insertCoord(edges[i].pFrom, p_a);
+        (*es)->insertCoord(edges[i].pTo, p_b);
+
 
         if (p_a != p_b) {
             if (edges[i].weight <= thresholds[p_a] && edges[i].weight <= thresholds[p_b]) {
@@ -255,7 +343,7 @@ void GraphSegmentationImpl::segmentGraph(Edge *edges, const int &nb_edges, const
     free(thresholds);
 }
 
-void GraphSegmentationImpl::filterSmallAreas(Edge *edges, const int &nb_edges, PointSet *es) {
+void nkhGraphSegmentationImpl::filterSmallAreas(Edge *edges, const int &nb_edges, PointSet *es) {
 
     for ( int i = 0; i < nb_edges; i++) {
 
@@ -266,14 +354,13 @@ void GraphSegmentationImpl::filterSmallAreas(Edge *edges, const int &nb_edges, P
 
             if (p_a != p_b && (es->size(p_a) < min_size || es->size(p_b) < min_size)) {
                 es->joinPoints(p_a, p_b);
-
             }
         }
     }
 
 }
 
-void GraphSegmentationImpl::finalMapping(PointSet *es, Mat &output) {
+void nkhGraphSegmentationImpl::finalMapping(PointSet *es, Mat &output) {
 
     int maximum_size = ( int)(output.rows * output.cols);
 
@@ -311,7 +398,7 @@ void GraphSegmentationImpl::finalMapping(PointSet *es, Mat &output) {
     free(mapped_id);
 }
 
-void GraphSegmentationImpl::processImage(InputArray src, cv::Mat& prun, OutputArray dst) {
+void nkhGraphSegmentationImpl::processImage(InputArray src, cv::Mat& prun, OutputArray dst) {
 
     Mat img = src.getMat();
 
@@ -345,9 +432,9 @@ void GraphSegmentationImpl::processImage(InputArray src, cv::Mat& prun, OutputAr
 
 }
 
-Ptr<GraphSegmentationImpl> createGraphSegmentation(double sigma, float k, int min_size) {
+Ptr<nkhGraphSegmentationImpl> createGraphSegmentation(double sigma, float k, int min_size) {
 
-    Ptr<GraphSegmentationImpl> graphseg = makePtr<GraphSegmentationImpl>();
+    Ptr<nkhGraphSegmentationImpl> graphseg = makePtr<nkhGraphSegmentationImpl>();
 
     graphseg->setSigma(sigma);
     graphseg->setK(k);
@@ -364,7 +451,7 @@ int egbisVisualise(cv::Mat &egbisImage, cv::Mat& visualEgbis)
     cv::Mat channs[3];
     convertScaleAbs(egbisImage, channs[0], 255/max);
     channs[0].convertTo(channs[0], CV_8UC1);
-    channs[1] = cv::Mat::zeros(egbisImage.rows, egbisImage.cols, CV_8UC1) + 230;
+    channs[1] = cv::Mat::zeros(egbisImage.rows, egbisImage.cols, CV_8UC1) + 200;
     channs[2] = cv::Mat::zeros(egbisImage.rows, egbisImage.cols, CV_8UC1) + 200;
     visualEgbis = cv::Mat::zeros(egbisImage.rows, egbisImage.cols, CV_8UC3);
     cv::merge(channs, 3, visualEgbis);
@@ -385,46 +472,5 @@ int egbisVisualise(cv::Mat &egbisImage, cv::Mat& visualEgbis)
 //        }
 //    }
 }
-
-PointSet::PointSet(int nb_elements_) {
-    nb_elements = nb_elements_;
-
-    mapping = new PointSetElement[nb_elements];
-
-    for ( int i = 0; i < nb_elements; i++) {
-        mapping[i] = PointSetElement(i);
-    }
-}
-
-PointSet::~PointSet() {
-    free(mapping);
-}
-
-int PointSet::getBasePoint( int p) {
-
-    int base_p = p;
-
-    while (base_p != mapping[base_p].p) {
-        base_p = mapping[base_p].p;
-    }
-
-    // Save mapping for faster acces later
-    mapping[p].p = base_p;
-
-    return base_p;
-}
-
-void PointSet::joinPoints(int p_a, int p_b) {
-
-    // Always target smaller set, to avoid redirection in getBasePoint
-    if (mapping[p_a].size < mapping[p_b].size)
-        swap(p_a, p_b);
-
-    mapping[p_b].p = p_a;
-    mapping[p_a].size += mapping[p_b].size;
-
-    nb_elements--;
-}
-
 
 #endif // EGBISCV_H

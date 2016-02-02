@@ -15,8 +15,9 @@ using namespace std;
 #include <fstream>
 #include <map>
 
-//#include "nkhUtil.h"
+#include "nkhUtil.h"
 #include "nkhAlgorithms.h"
+#include "egbiscv.h"
 
 
 /*----------------- nkhEnd: global vars and defs -----------------*/
@@ -58,8 +59,14 @@ string fpsCalcEnd()
     return string(fpsString);
 }
 /*----------------- nkhEnd: FPS counter -----------------*/
+void nkhSeg(cv::Ptr<nkhGraphSegmentationImpl> segPtr, cv::Mat& img, cv::Mat& cutMatrix, cv::Mat& egbisSeg)
+{
+    segPtr->processImage(img, cutMatrix, egbisSeg);
+}
 
-
+float sigma_egbis ;
+float k_egbis ;
+int min_size_egbis ;
 int main(int argc, char *argv[])
 {
     //QCoreApplication a(argc, argv);
@@ -75,12 +82,15 @@ int main(int argc, char *argv[])
     cout << "USINGOPENMP\n";
 #endif
 
-    if (argc == 4)
+    if (argc == 7)
     {
         path inVid(argv[1]), inFile(argv[2]), outDir(argv[3]);
         checkRegularFile(inVid);
         checkRegularFile(inFile);
         checkDir(outDir);
+        sigma_egbis = atof(argv[4]);
+        k_egbis = atof(argv[5]);
+        min_size_egbis = atoi(argv[6]);
         nkhMain(inVid, inFile, outDir);
 
         return NORMAL_STATE;
@@ -99,41 +109,16 @@ void nkhMain(path inVid, path inFile, path outDir)
 
     cv::setUseOptimized(true);
     cv::setNumThreads(16);
-
-    //Open the video file
     cv::VideoCapture cap(inVid.string());
-    
-    //TODO: parse commandline arguments for different tasks
-    //task1 : cropGroundTruth(VideoCapture cap, path inFile, path outDir)
-    //task1 is done, ran once.
     
     //Task 1.5: open the map for evaluation
     map<int, FrameObjects> groundTruth;
     parseFile(inFile, groundTruth);
 
-    //task2: resize and preproc.
     cv::Mat currentFrame;
     int frameCount = 0;
     initFPSTimer();
     vector<double> evalSaliency;
-
-
-    /*
-
-    cv::namedWindow("Smoothing S", 1);
-    cv::namedWindow("Smoothing R", 1);
-
-    //DT trackbars
-    char TrackbarNameS[50], TrackbarNameR[50];
-    sprintf( TrackbarNameS, "SigmaS: %d", sigmaS);
-    sprintf( TrackbarNameR, "SigmaR: %d", sigmaR);
-    cv::createTrackbar( TrackbarNameS, "Smoothing S", &sigmaS, 1500, on_trackbarS );
-    cv::createTrackbar( TrackbarNameR, "Smoothing R", &sigmaR, 1500, on_trackbarR );
-
-    /// Show some stuff
-    on_trackbarS( sigmaS, 0 );
-    on_trackbarR( sigmaR, 0 );
-    */
 
 /*
     cv::Mat template1 = cv::imread("1.png", CV_LOAD_IMAGE_COLOR);
@@ -185,7 +170,7 @@ void nkhMain(path inVid, path inFile, path outDir)
         dtfWrapper(frameResized, edgeSmooth);
 
         cv::Mat edgeSmoothLow, edgeSmoothLow_gray;
-        cv::ximgproc::dtFilter(frameResized, frameResized, edgeSmoothLow, 80, 190, cv::ximgproc::DTF_RF); //r 350. 50. nc
+        cv::ximgproc::dtFilter(frameResized, frameResized, edgeSmoothLow, 20, 140, cv::ximgproc::DTF_RF); //r 350. 50. nc
 
 
         cv::cvtColor(edgeSmooth, edgeSmooth_gray, cv::COLOR_BGR2GRAY);
@@ -251,12 +236,12 @@ void nkhMain(path inVid, path inFile, path outDir)
         */
 
 //        /*
-        int erosionDilation_size = 3;
-        cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT,
-                                                    cv::Size(2*erosionDilation_size + 1,
-                                                             2*erosionDilation_size+1));
+//        int erosionDilation_size = 3;
+//        cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT,
+//                                                    cv::Size(2*erosionDilation_size + 1,
+//                                                             2*erosionDilation_size+1));
 
-        cv::Mat colorMask = /*whiteMask | *//*greenMask |*/  brownMask;
+        cv::Mat colorMask = whiteMask;// | greenMask |  brownMask;
 //        */
 
         /*
@@ -282,19 +267,6 @@ void nkhMain(path inVid, path inFile, path outDir)
 //        */
 
 
-        /*
-         * GPU
-         * int erosionDilation_size = 5;
-    Mat element = cv::getStructuringElement(MORPH_RECT, Size(2*erosionDilation_size + 1,    2*erosionDilation_size+1));
-
-    cuda::GpuMat d_element(element);
-    cuda::GpuMat d_img(img);
-
-    Ptr<cuda::Filter> dilateFilter = cuda::createMorphologyFilter(MORPH_DILATE, d_img.type(), element);
-    dilateFilter->apply(d_img, d_img);
-
-
-         */
 
         //MSER
 /*
@@ -323,28 +295,34 @@ void nkhMain(path inVid, path inFile, path outDir)
         cv::Sobel( edgeSmooth_gray, grad_y, CV_16S, 0, 1, 3, 1, 0, cv::BORDER_DEFAULT );
         cv::convertScaleAbs( grad_y, abs_grad_y );
         cv::addWeighted(abs_grad_y, 0.5, abs_grad_x, 0.5, 0, abs_grad_x);
-
 //        saliency32 *=20 ;
 //        cv::addWeighted(saliency, 0.7, abs_grad_x, 0.5, 0, abs_grad_x);
-
-
 //        abs_grad_x &= colorMask;
         cv::threshold(abs_grad_x, abs_grad_x, 30, 255, cv::THRESH_BINARY);
-
         //cv::ximgproc::dtFilter(abs_grad_x, abs_grad_x, abs_grad_x, 70, 70, cv::ximgproc::DTF_RF); //r 350. 50. nc
 */
 
         /*
         cv::Mat edgeImg;
-        cv::cuda::GpuMat devSmooth(edgeSmoothLow), devEqHist, devGraySmooth(edgeSmoothLow_gray), devEdgeImg;
+        cv::cuda::GpuMat devSmooth(frameResized2), devEqHist, devGraySmooth(frameResized_gray2), devEdgeImg;
 //        cv::cuda::cvtColor(devSmooth, devGraySmooth, cv::COLOR_BGR2GRAY);
 //        cv::cuda::equalizeHist(devGraySmooth, devEqHist);
-        cv::Ptr<cv::cuda::CannyEdgeDetector> cudaCanny = cv::cuda::createCannyEdgeDetector(20, 120);
-        cudaCanny->detect(devGraySmooth, devEdgeImg);
+        cv::Ptr<cv::cuda::Filter> laplacPtr = cv::cuda::createLaplacianFilter(devGraySmooth.type(), devGraySmooth.type(),
+                                                                              3, 1);
+        laplacPtr->apply(devGraySmooth, devEdgeImg);
+//        cv::Ptr<cv::cuda::CannyEdgeDetector> cudaCanny = cv::cuda::createCannyEdgeDetector(100, 200);
+//        cudaCanny->detect(devGraySmooth, devEdgeImg);
+        //        /*
+//        int erosionDilation_size = 3;
+//        Mat element = cv::getStructuringElement(MORPH_RECT, Size(2*erosionDilation_size + 1,    2*erosionDilation_size+1));
+//        Ptr<cuda::Filter> dilateFilter = cuda::createMorphologyFilter(MORPH_ERODE, devEdgeImg.type(), element);
+//        dilateFilter->apply(devEdgeImg, devEdgeImg);
         devEdgeImg.download(edgeImg);
-        edgeImg &= fin;
+
+         */
+//        edgeImg &= fin;
         //cv::ximgproc::dtFilter(edgeImg, edgeImg, edgeImg, 80, 190, cv::ximgproc::DTF_RF); //r 350. 50. nc
-        */
+//        */
 
         //Visualize
 
@@ -371,61 +349,70 @@ void nkhMain(path inVid, path inFile, path outDir)
         cv::Mat egbisImage, tmpOut;
         int num_ccs;
 
-//        egbisImage = runEgbisOnMat(edgeSmooth_resize2, 0.5, 1000, 1000, &num_ccs);
-
         cv::Mat currTest(hlsFrameRes2);
 
         currTest.copyTo(tmpOut);
 //        cv::ximgproc::dtFilter(currTest, currTest, tmpOut,
 //                              90, 400, cv::ximgproc::DTF_RF); //20, 100, RF was best for lab, with: minSegSize*10, minSegSize ,1/200 of tmpOut size
-
 //        ToDO:
 //        change above in dtfilter and below in seg, and test again. dont forget to get back to shape in joining.
 //        cv::cvtColor(tmpOut, labFrameRes2, cv::COLOR_Lab2BGR);
         int minSegSize = tmpOut.size().area()/200;
         //egbisImage = runEgbisOnMat(tmpOut, 0.2, 1000, 105, &num_ccs); //0.5 , 200. 105 best, 200 50, 1000 50.
 
+        cv::Mat egbisSeg, grayImg;
+//        cvtColor(frameResized2, grayImg, COLOR_BGR2GRAY);
+//        Mat grad_x, grad_y;
+//        Mat abs_grad_x, abs_grad_y;
 
-        //400, 105, HSV,     return sqrt(square(b1-b2)); BESTT 48, dtf 20,100
+//        int scale = 1;
+//        int delta = 0;
+//        int ddepth = CV_16S;
+//        /// Gradient X
+//        Sobel( grayImg, grad_x, ddepth, 1, 0, 3, scale, delta, BORDER_DEFAULT );
+//        convertScaleAbs( grad_x, abs_grad_x );
+//        /// Gradient Y
+//        Sobel( grayImg, grad_y, ddepth, 0, 1, 3, scale, delta, BORDER_DEFAULT );
+//        convertScaleAbs( grad_y, abs_grad_y );
+//        addWeighted( abs_grad_x, 0.5, abs_grad_y, 0.5, 0, edgeImg );
 
+        Ptr<nkhGraphSegmentationImpl> segPtr = createGraphSegmentation(sigma_egbis, k_egbis, min_size_egbis);
+//        measure<chrono::milliseconds>(nkhSeg, segPtr, edgeSmoothLow, edgeImg, egbisSeg);
+//        measure<chrono::milliseconds>(egbisVisualise, egbisSeg, egbisImage);
+        cv::Mat ensembleFrame, hlsSmooth, hsvSmooth, hlsChans[3], hsvChans[3], labSmooth, costMatrixes[3], costMatrix;
+//        cv::cvtColor(edgeSmoothLow, hlsSmooth, cv::COLOR_BGR2HLS);
+//        cv::cvtColor(edgeSmoothLow, hsvSmooth, cv::COLOR_BGR2HSV);
+//        cv::cvtColor(edgeSmoothLow, labSmooth, cv::COLOR_BGR2Lab);
+//        cv::split(hlsSmooth, hlsChans);
+//        cv::split(hsvSmooth, hsvChans);
+//        hlsChans[2] = hsvChans[2].clone();
+//        cv::merge(hlsChans, 3 , ensembleFrame);
+
+//        costMatrixes[0]=whiteMask.clone();
+//        costMatrixes[1]=greenMask.clone();
+//        costMatrixes[2]=brownMask.clone();
+//        cv::merge(costMatrixes, 3, costMatrix);
+
+        nkhSeg(segPtr, edgeSmooth, costMatrix, egbisSeg);
+        egbisVisualise(egbisSeg, egbisImage);
+
+//         cv::cuda::Stream stream[3];
+//         for(int i=0; i<3; i++){
+//             for(int j=0; j<3; j++){
+//                 for(int k=0; k<4; k++){
+//                     cv::gpu::multiply(pyramid[i][j][k], weightmap[i][k], pyramid[i][j][k], stream[i]);
+//                 }
+//             }
+//         }
 
 //        cv::cvtColor(tmpOut, hsvFrameRes2, cv::COLOR_HSV2BGR);
 //        cv::Ptr<cv::ximgproc::segmentation::GraphSegmentation> gs =
 //                cv::ximgproc::segmentation::createGraphSegmentation(0.0, 10000, 10);
 //        gs->processImage(labFrameRes2, egbisImage);
 
-        /*
-        double min, max;
-        cv::minMaxLoc(egbisImage, &min, &max);
+/*
+        char controlChar = maybeImshow("Orig", masked, 30) ;
 
-        int nb_segs = (int)max + 1;
-
-//        std::cout << nb_segs << " segments" << std::endl;
-
-        tmpOut = cv::Mat::zeros(egbisImage.rows, egbisImage.cols, CV_8UC3);
-
-        uint* p;
-        uchar* p2;
-
-        for (int i = 0; i < egbisImage.rows; i++) {
-
-            p = egbisImage.ptr<uint>(i);
-            p2 = tmpOut.ptr<uchar>(i);
-
-            for (int j = 0; j < egbisImage.cols; j++) {
-                cv::Scalar color = color_mapping(p[j]);
-                p2[j*3] = color[0];
-                p2[j*3 + 1] = color[1];
-                p2[j*3 + 2] = color[2];
-            }
-        }
-        */
-
-        //cv::pyrMeanShiftFiltering(edgeSmooth, egbisImage, 90, 30, 1, cv::TermCriteria(cv::TermCriteria::MAX_ITER+cv::TermCriteria::EPS, 1, 1));
-///*
-        char controlChar = maybeImshow("Orig", frameResized, 30) ;
-
-//        saliency72Orig *=255;
         controlChar = maybeImshow("Saliency", egbisImage) ;
         if (controlChar == 'q')
         {
@@ -439,7 +426,7 @@ void nkhMain(path inVid, path inFile, path outDir)
         {
             cap.set(CV_CAP_PROP_POS_AVI_RATIO , 0);
         }
-//*/
+*/
         fpsCalcEnd();
         cout<< timerFPS << endl;
         frameCount++;

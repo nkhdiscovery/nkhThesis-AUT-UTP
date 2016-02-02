@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 #include "egbis/segment-image.h"
 #include "egbis/misc.h"
 #include "egbis/image.h"
-#include "nkhUtil.h"
+//#include "nkhUtil.h"
 #ifdef _OPENMP
 # include <omp.h>
 #endif
