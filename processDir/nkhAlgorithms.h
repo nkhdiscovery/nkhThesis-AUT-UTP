@@ -68,8 +68,8 @@ NOT_REGULAR_FILE,
 /****************** nkhEnd: macro utils ******************/
 
 /****************** nkhStart: global vars and defs ******************/
-#define RESIZE_FACTOR 8
-#define RESIZE_FACTOR2 8
+#define RESIZE_FACTOR 5
+#define RESIZE_FACTOR2 5
 #define _1080_x 1920
 #define _1080_y 1080
 #define _720_x 1280
@@ -475,7 +475,7 @@ void whiteThresh2(cv::Mat& edgeSmooth, cv::Mat& saliencyOrig, cv::Mat& fin)
 //    tmpOrig = cv::Mat(tmp.size().height, tmp.size().width, CV_8U, cv::Scalar(255,255,255)) - tmpOrig;
 //        cv::threshold(tmp, tmp, 20, 255, cv::THRESH_BINARY_INV);
         fin = (tmp) <1 ;//& (hlsChann[1]>=70) ;
-        //cv::addWeighted(saliency, 0.4, fin, 0.7, -10, fin); //Play With it! //TODO
+//        cv::addWeighted(saliency, 0.5, fin, 0.5, -10, fin); //Play With it! //TODO
         cv::threshold(fin, fin, 170, 255, cv::THRESH_BINARY);
 
         return;

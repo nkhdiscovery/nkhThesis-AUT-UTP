@@ -7,42 +7,9 @@
 #include <iostream>
 #include <stdlib.h>
 #include <time.h>
-#include <set>
+#include <vector>
 using namespace cv;
 using namespace std;
-
-//cv::Scalar hsv_to_rgb(cv::Scalar c) {
-//    cv::Mat in(1, 1, CV_32FC3);
-//    cv::Mat out(1, 1, CV_32FC3);
-
-//    float * p = in.ptr<float>(0);
-
-//    p[0] = c[0] * 360;
-//    p[1] = c[1];
-//    p[2] = c[2];
-
-//    cv::cvtColor(in, out, cv::COLOR_HSV2RGB);
-
-//   cv::Scalar t;
-
-//    cv::Vec3f p2 = out.at<cv::Vec3f>(0, 0);
-
-//    t[0] = (int)(p2[0] * 255);
-//    t[1] = (int)(p2[1] * 255);
-//    t[2] = (int)(p2[2] * 255);
-
-//    return t;
-
-//}
-
-//cv::Scalar color_mapping(int segment_id) {
-
-//    double base = (double)(segment_id) * 0.618033988749895 + 0.24443434;
-
-//    return hsv_to_rgb(cv::Scalar(fmod(base, 1.2), 0.95, 0.80));
-
-//}
-
 class nkhPoint{
 public:
     int x, y;
@@ -84,18 +51,19 @@ class PointSetElement {
 public:
     int p;
     int size;
-    set<nkhPoint> coordSet;
+//    vector<nkhPoint> coordVec;
+//    cv::Mat shape;
 
     PointSetElement() { }
-    ~PointSetElement() {coordSet.clear();}
+//    ~PointSetElement() {coordVec.clear();}
     PointSetElement(int p_) {
         p = p_;
         size = 1;
     }
-    void insertCoord(nkhPoint point)
-    {
-        coordSet.insert(point);
-    }
+//    void insertCoord(nkhPoint point)
+//    {
+//        coordVec.push_back(point);
+//    }
 };
 
 // An object to manage set of points, who can be fusionned
@@ -115,10 +83,10 @@ public:
     // Return the set size of a set (based on the main point)
     int size(unsigned int p) { return mapping[p].size; }
 
-    void insertCoord(nkhPoint point, int p)
-    {
-        mapping[p].insertCoord(point);
-    }
+//    void insertCoord(nkhPoint point, int p)
+//    {
+//        mapping[p].insertCoord(point);
+//    }
 
 private:
     PointSetElement* mapping;
@@ -161,7 +129,7 @@ void PointSet::joinPoints(int p_a, int p_b) {
 
     mapping[p_b].p = p_a;
     mapping[p_a].size += mapping[p_b].size;
-    mapping[p_a].coordSet.insert(mapping[p_b].coordSet.begin(),mapping[p_b].coordSet.end());
+//    mapping[p_a].coordVec.insert(mapping[p_a].coordVec.end(), mapping[p_b].coordVec.begin(),mapping[p_b].coordVec.end());
 
     nb_elements--;
 }
@@ -294,7 +262,7 @@ void nkhGraphSegmentationImpl::buildGraph(Edge **edges, int &nb_edges, const Mat
                         (*edges)[nb_edges].weight = diff;
                         (*edges)[nb_edges].from = i * img_filtered.cols +  j;
                         (*edges)[nb_edges].to = i2 * img_filtered.cols + j2;
-                        (*edges)[nb_edges].setPoints(nkhPoint(i,j), nkhPoint(i2,j2));
+//                        (*edges)[nb_edges].setPoints(nkhPoint(i,j), nkhPoint(i2,j2));
                         nb_edges++;
                     }
 
@@ -325,8 +293,8 @@ void nkhGraphSegmentationImpl::segmentGraph(Edge *edges, const int &nb_edges, co
 
         int p_a = (*es)->getBasePoint(edges[i].from);
         int p_b = (*es)->getBasePoint(edges[i].to);
-        (*es)->insertCoord(edges[i].pFrom, p_a);
-        (*es)->insertCoord(edges[i].pTo, p_b);
+//        (*es)->insertCoord(edges[i].pFrom, p_a);
+//        (*es)->insertCoord(edges[i].pTo, p_b);
 
 
         if (p_a != p_b) {
@@ -340,7 +308,7 @@ void nkhGraphSegmentationImpl::segmentGraph(Edge *edges, const int &nb_edges, co
         }
     }
 
-    free(thresholds);
+    delete [] thresholds;
 }
 
 void nkhGraphSegmentationImpl::filterSmallAreas(Edge *edges, const int &nb_edges, PointSet *es) {

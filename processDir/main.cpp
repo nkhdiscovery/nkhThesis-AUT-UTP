@@ -141,8 +141,9 @@ void nkhMain(path inVid, path inFile, path outDir)
         cap >> currentFrame;
         if(currentFrame.size().area() <= 0)
         {
-            cap.set(CV_CAP_PROP_POS_AVI_RATIO , 0);
-            continue;
+//            cap.set(CV_CAP_PROP_POS_AVI_RATIO , 0);
+//            continue;
+            break;
         }
         fpsCalcStart();
         
@@ -241,7 +242,7 @@ void nkhMain(path inVid, path inFile, path outDir)
 //                                                    cv::Size(2*erosionDilation_size + 1,
 //                                                             2*erosionDilation_size+1));
 
-        cv::Mat colorMask = whiteMask;// | greenMask |  brownMask;
+        cv::Mat colorMask = whiteMask | greenMask |  brownMask;
 //        */
 
         /*
@@ -394,7 +395,24 @@ void nkhMain(path inVid, path inFile, path outDir)
 //        cv::merge(costMatrixes, 3, costMatrix);
 
         nkhSeg(segPtr, edgeSmooth, costMatrix, egbisSeg);
-        egbisVisualise(egbisSeg, egbisImage);
+        int nb_segs = egbisVisualise(egbisSeg, egbisImage);
+        for (int i = 0 ; i <= nb_segs ; i++)
+        {
+            cv::Mat s1;
+            cv::inRange(egbisSeg, cv::Scalar(i), cv::Scalar(i), s1);
+//            imshow("t1" , s1&fin);
+//            cvWaitKey(10);
+
+            if(cv::countNonZero(s1&fin) < 0.5*cv::countNonZero(s1))
+                continue;
+            char name[20];
+            sprintf(name, "f%d-%d", frameCount, i);
+            cv::Mat toWrite;
+            cv::resize(s1, s1, Size(frameResizedHalf.size().width,
+                                    frameResizedHalf.size().height));
+            frameResizedHalf.copyTo(toWrite, s1);
+            imwrite(outDir.string() + "/" + name + ".png", toWrite);
+        }
 
 //         cv::cuda::Stream stream[3];
 //         for(int i=0; i<3; i++){
@@ -404,16 +422,10 @@ void nkhMain(path inVid, path inFile, path outDir)
 //                 }
 //             }
 //         }
-
-//        cv::cvtColor(tmpOut, hsvFrameRes2, cv::COLOR_HSV2BGR);
-//        cv::Ptr<cv::ximgproc::segmentation::GraphSegmentation> gs =
-//                cv::ximgproc::segmentation::createGraphSegmentation(0.0, 10000, 10);
-//        gs->processImage(labFrameRes2, egbisImage);
-
 /*
-        char controlChar = maybeImshow("Orig", masked, 30) ;
+        char controlChar = maybeImshow("Orig", egbisImage, 30) ;
 
-        controlChar = maybeImshow("Saliency", egbisImage) ;
+//        controlChar = maybeImshow("Saliency", fftSmooth) ;
         if (controlChar == 'q')
         {
             break;
