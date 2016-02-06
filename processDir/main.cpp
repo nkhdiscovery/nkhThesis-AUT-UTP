@@ -10,6 +10,7 @@ using namespace boost::filesystem;
 
 #include <vector>
 #include <algorithm>
+#include <cstdlib>
 using namespace std;
 
 #include <fstream>
@@ -120,6 +121,10 @@ void nkhMain(path inVid, path inFile, path outDir)
     initFPSTimer();
     vector<double> evalSaliency;
 
+//    cropGroundTruth(cap, inFile, outDir);
+//    cap.release();
+//    return;
+
 /*
     cv::Mat template1 = cv::imread("1.png", CV_LOAD_IMAGE_COLOR);
     cv::Mat tmplGray;
@@ -136,6 +141,7 @@ void nkhMain(path inVid, path inFile, path outDir)
 
     cv::Mat prevFrame_gray2, flowImg;
 
+    int seg_sum = 0 ;
     while(true)
     {
         cap >> currentFrame;
@@ -166,10 +172,10 @@ void nkhMain(path inVid, path inFile, path outDir)
         }
         //TODO: implement with GPU
         //Mat edgeSmooth = measure<std::chrono::milliseconds>(edgeAwareSmooth, frameResized);
-        cv::Mat edgeSmooth, edgeSmooth_gray, edgeSmooth_resize2;
+        cv::Mat edgeSmooth, edgeSmooth_gray, edgeSmooth_resize2, edgeSmooth_Half;
 
         dtfWrapper(frameResized, edgeSmooth);
-
+        dtfWrapper(frameResizedHalf, edgeSmooth_Half);
         cv::Mat edgeSmoothLow, edgeSmoothLow_gray;
         cv::ximgproc::dtFilter(frameResized, frameResized, edgeSmoothLow, 20, 140, cv::ximgproc::DTF_RF); //r 350. 50. nc
 
@@ -195,7 +201,7 @@ void nkhMain(path inVid, path inFile, path outDir)
         //SaliencyMap
         cv::Mat saliency, saliency72, saliencyOrig, saliency72Orig;
         computeSaliency(frameResized, 55 , saliency);
-        computeSaliency(frameResized, 100 , saliency72);
+        computeSaliency(frameResized, 55 , saliency72);
 
          computeSaliency(edgeSmoothLow, 64 , saliencyV);
 
@@ -396,6 +402,7 @@ void nkhMain(path inVid, path inFile, path outDir)
 
         nkhSeg(segPtr, edgeSmooth, costMatrix, egbisSeg);
         int nb_segs = egbisVisualise(egbisSeg, egbisImage);
+        seg_sum += nb_segs;
         for (int i = 0 ; i <= nb_segs ; i++)
         {
             cv::Mat s1;
@@ -407,11 +414,40 @@ void nkhMain(path inVid, path inFile, path outDir)
                 continue;
             char name[20];
             sprintf(name, "f%d-%d", frameCount, i);
-            cv::Mat toWrite;
+            cv::Mat toWrite(edgeSmooth_Half);
             cv::resize(s1, s1, Size(frameResizedHalf.size().width,
                                     frameResizedHalf.size().height));
-            frameResizedHalf.copyTo(toWrite, s1);
-            imwrite(outDir.string() + "/" + name + ".png", toWrite);
+
+
+            vector<vector<Point> > contours;
+             vector<Vec4i> hierarchy;
+
+             /// Detect edges using Threshold             /// Find contours
+             findContours( s1, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
+
+             /// Approximate contours to polygons + get bounding rects and circles
+             vector<vector<Point> > contours_poly( contours.size() );
+             vector<Rect> boundRect( contours.size() );
+             vector<Point2f>center( contours.size() );
+             vector<float>radius( contours.size() );
+
+             for( int i = 0; i < contours.size(); i++ )
+                { approxPolyDP( Mat(contours[i]), contours_poly[i], 3, true );
+                  boundRect[i] = boundingRect( Mat(contours_poly[i]) );
+                }
+
+
+             /// Draw polygonal contour + bonding rects + circles
+             for( int i = 0; i< contours.size(); i++ )
+                {
+//                  Scalar color = Scalar( 0,255,255 );
+//                  drawContours( drawing, contours_poly, i, color, 1, 8, vector<Vec4i>(), 0, Point() );
+                    frameResizedHalf.copyTo(toWrite, s1);
+//                  rectangle( drawing, boundRect[i].tl(), boundRect[i].br(), color, 2, 8, 0 );
+                    imwrite(outDir.string() + "/" + name + "c" + to_string(i) +".png", toWrite(boundRect[i]));
+                }
+//             maybeImshow("cont", drawing, 30) ;
+
         }
 
 //         cv::cuda::Stream stream[3];
@@ -425,7 +461,7 @@ void nkhMain(path inVid, path inFile, path outDir)
 /*
         char controlChar = maybeImshow("Orig", egbisImage, 30) ;
 
-//        controlChar = maybeImshow("Saliency", fftSmooth) ;
+//        controlChar = maybeImshow("Saliency", edgeSmooth) ;
         if (controlChar == 'q')
         {
             break;
@@ -456,7 +492,7 @@ void nkhMain(path inVid, path inFile, path outDir)
 
     }
     calcMeanVar(evalSaliency);
-
+    cout << "Segs " << (double)seg_sum/frameCount << endl;
     //Handle Memory
     cap.release();
     currentFrame.release();
@@ -543,7 +579,13 @@ void cropGroundTruth(cv::VideoCapture cap, path inFile, path outDir)
             {
                 cv::Rect tmpBorder(tmpFrameObj.getObjs().at(i).getBorder());
                 //Scale ROI! annotation is done in 720p, the input is 1080p
-                cv::Rect resizedBorder(tmpBorder.x*1.5, tmpBorder.y*1.5, tmpBorder.width*1.5, tmpBorder.height*1.5);
+                //New-extend
+                double extendFactor = 0.8;
+
+                cv::Rect resizedBorder(rand()%700 , rand()%600,
+                                       300, 300);
+
+
                 cv::Rect imgBounds(0,0,currentframe.cols, currentframe.rows);
                 resizedBorder = resizedBorder & imgBounds;
                 
@@ -552,6 +594,18 @@ void cropGroundTruth(cv::VideoCapture cap, path inFile, path outDir)
                 //rectangle(currentframe, tmpBorder, Scalar(0,0,255));
             }
         }
+        else
+        {
+            cv::Rect resizedBorder(0 , 350,
+                                   500, 500);
+
+            cv::Rect imgBounds(0,0,currentframe.cols, currentframe.rows);
+            resizedBorder = resizedBorder & imgBounds;
+
+            imwrite(outDir.string() + "/" + "else" + "_" +
+                    to_string(frameCount) + ".png", currentframe(resizedBorder));
+        }
+
         //imshow("Orig" , currentframe);
         if(cvWaitKey(10) == 'q')
             break;

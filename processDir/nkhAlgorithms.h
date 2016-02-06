@@ -68,8 +68,8 @@ NOT_REGULAR_FILE,
 /****************** nkhEnd: macro utils ******************/
 
 /****************** nkhStart: global vars and defs ******************/
-#define RESIZE_FACTOR 5
-#define RESIZE_FACTOR2 5
+#define RESIZE_FACTOR 7
+#define RESIZE_FACTOR2 7
 #define _1080_x 1920
 #define _1080_y 1080
 #define _720_x 1280
