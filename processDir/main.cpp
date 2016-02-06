@@ -121,9 +121,9 @@ void nkhMain(path inVid, path inFile, path outDir)
     initFPSTimer();
     vector<double> evalSaliency;
 
-//    cropGroundTruth(cap, inFile, outDir);
-//    cap.release();
-//    return;
+    cropGroundTruth(cap, inFile, outDir);
+    cap.release();
+    return;
 
 /*
     cv::Mat template1 = cv::imread("1.png", CV_LOAD_IMAGE_COLOR);
@@ -582,9 +582,12 @@ void cropGroundTruth(cv::VideoCapture cap, path inFile, path outDir)
                 //Scale ROI! annotation is done in 720p, the input is 1080p
                 //New-extend
                 double extendFactor = 0.8;
-
-                cv::Rect resizedBorder(rand()%700 , rand()%600,
-                                       300, 300);
+                cv::Rect resizedBorder(tmpBorder.x*1.5 - extendFactor*tmpBorder.x,
+                                       tmpBorder.y*1.5 - extendFactor*tmpBorder.y,
+                                       tmpBorder.width*1.5 + 2*extendFactor*tmpBorder.width,
+                                       tmpBorder.height*1.5 + 2*extendFactor*tmpBorder.height);
+//                cv::Rect resizedBorder(rand()%700 , rand()%600,
+//                                       300, 300);
 
 
                 cv::Rect imgBounds(0,0,currentframe.cols, currentframe.rows);
