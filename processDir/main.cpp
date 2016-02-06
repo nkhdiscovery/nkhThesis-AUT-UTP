@@ -175,7 +175,8 @@ void nkhMain(path inVid, path inFile, path outDir)
         cv::Mat edgeSmooth, edgeSmooth_gray, edgeSmooth_resize2, edgeSmooth_Half;
 
         dtfWrapper(frameResized, edgeSmooth);
-        dtfWrapper(frameResizedHalf, edgeSmooth_Half);
+        //dtfWrapper(frameResizedHalf, edgeSmooth_Half);
+        cv::blur(frameResizedHalf, edgeSmooth_Half, Size(21,21));
         cv::Mat edgeSmoothLow, edgeSmoothLow_gray;
         cv::ximgproc::dtFilter(frameResized, frameResized, edgeSmoothLow, 20, 140, cv::ximgproc::DTF_RF); //r 350. 50. nc
 
@@ -220,13 +221,13 @@ void nkhMain(path inVid, path inFile, path outDir)
         //threshold
         cv::Mat fin, whiteMask;
 
-        whiteThresh2(edgeSmoothLow, saliency72, whiteMask);
+        whiteThresh2(frameResized, saliency72, whiteMask);
 
         cv::Mat greenMask;
-        greenThresh1(edgeSmoothLow, greenMask);
+        greenThresh1(frameResized, greenMask);
 
         cv::Mat brownMask;
-        brownThresh1(edgeSmoothLow, brownMask);
+        brownThresh1(frameResized, brownMask);
 
         /*
         //TODO: Weight if needed
@@ -410,7 +411,7 @@ void nkhMain(path inVid, path inFile, path outDir)
 //            imshow("t1" , s1&fin);
 //            cvWaitKey(10);
 
-            if(cv::countNonZero(s1&fin) < 0.5*cv::countNonZero(s1))
+            if(cv::countNonZero(s1&fin) < 0.7*cv::countNonZero(s1))
                 continue;
             char name[20];
             sprintf(name, "f%d-%d", frameCount, i);

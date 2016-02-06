@@ -245,7 +245,7 @@ void nkhGraphSegmentationImpl::buildGraph(Edge **edges, int &nb_edges, const Mat
 
                         for ( int channel = 0; channel < nb_cost_channels; channel++) {
                             tmp_total += ( (ptrCost[j * nb_cost_channels + channel]
-                                    == 255) && (ptr2Cost[j2 * nb_cost_channels + channel] == 255)/* && tmp_total<=5*/) ? 0.1*tmp_total : 1000.0*tmp_total;
+                                    == 255) && (ptr2Cost[j2 * nb_cost_channels + channel] == 255) && tmp_total<=5) ? 0.1*tmp_total : 1000.0*tmp_total;
 //                            cout << (int)ptr2Cost[j2 * nb_cost_channels + channel] << " " ;
                         }
 

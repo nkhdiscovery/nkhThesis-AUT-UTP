@@ -470,7 +470,7 @@ void whiteThresh2(cv::Mat& edgeSmooth, cv::Mat& saliencyOrig, cv::Mat& fin)
 //    cv::Mat newChan[3]={res1, res2, res3};
 //    cv::merge( newChan, 3, reconst);
     cv::Mat tmpOrig(tmp);
-    tmp /= 70.0; //D=20
+    tmp /= 60.0; //D=20
 //    cout << tmp << endl << "______________________________________" << endl;
 //    tmpOrig = cv::Mat(tmp.size().height, tmp.size().width, CV_8U, cv::Scalar(255,255,255)) - tmpOrig;
 //        cv::threshold(tmp, tmp, 20, 255, cv::THRESH_BINARY_INV);
@@ -537,7 +537,7 @@ void brownThresh1(cv::Mat& orig , cv::Mat& fin)
 
     cv::cvtColor(orig, hls, CV_BGR2HLS);
     cv::split(hls, hlsChann);
-    cv::inRange(hls, cv::Scalar(0, 10, 55), cv::Scalar(13, 112, 255), fin); //Threshold the color
+    cv::inRange(hls, cv::Scalar(12.5, 20, 63), cv::Scalar(14.5, 92, 204), fin); //Threshold the color
 //    fin = (tmp1 & (hlsChann[1]<155) & (hlsChann[2]< 100) & (hlsChann[1]>=25)) | fin ;//& (hlsChann[0]<=90);// (hlsChann[2]>=15)& ;
 //    fin |= (hlsChann[1]<43) & (hlsChann[2]<128) & (hlsChann[0] <89);
     return;
