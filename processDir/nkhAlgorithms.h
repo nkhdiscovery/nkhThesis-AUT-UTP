@@ -517,7 +517,7 @@ void greenThresh1(cv::Mat& orig , cv::Mat& fin)
     cv::cvtColor(orig, hls, CV_BGR2HLS);
     //cv::split(hls, hlsChann);
     cv::Mat tmp;
-    cv::inRange(hls, cv::Scalar(75, 25, 63), cv::Scalar(91, 195, 255), tmp); //Threshold the color
+    cv::inRange(hls, cv::Scalar(75, 25, 63), cv::Scalar(85, 195, 255), tmp); //Threshold the color
     cv::threshold(tmp, tmp, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
     fin = tmp.clone();
     return;

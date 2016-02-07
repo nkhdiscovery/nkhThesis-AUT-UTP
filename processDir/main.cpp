@@ -121,9 +121,9 @@ void nkhMain(path inVid, path inFile, path outDir)
     initFPSTimer();
     vector<double> evalSaliency;
 
-    cropGroundTruth(cap, inFile, outDir);
-    cap.release();
-    return;
+//    cropGroundTruth(cap, inFile, outDir);
+//    cap.release();
+//    return;
 
 /*
     cv::Mat template1 = cv::imread("1.png", CV_LOAD_IMAGE_COLOR);
@@ -224,10 +224,10 @@ void nkhMain(path inVid, path inFile, path outDir)
         whiteThresh2(frameResized, saliency72, whiteMask);
 
         cv::Mat greenMask;
-        greenThresh1(frameResized, greenMask);
+        greenThresh1(edgeSmoothLow, greenMask);
 
         cv::Mat brownMask;
-        brownThresh1(frameResized, brownMask);
+        brownThresh1(edgeSmoothLow, brownMask);
 
         /*
         //TODO: Weight if needed
@@ -249,7 +249,7 @@ void nkhMain(path inVid, path inFile, path outDir)
 //                                                    cv::Size(2*erosionDilation_size + 1,
 //                                                             2*erosionDilation_size+1));
 
-        cv::Mat colorMask = whiteMask | greenMask |  brownMask;
+        cv::Mat colorMask = /*whiteMask |*/ /*greenMask |*/  brownMask;
 //        */
 
         /*
@@ -459,10 +459,10 @@ void nkhMain(path inVid, path inFile, path outDir)
 //                 }
 //             }
 //         }
-/*
+///*
         char controlChar = maybeImshow("Orig", egbisImage, 30) ;
 
-//        controlChar = maybeImshow("Saliency", edgeSmooth) ;
+        controlChar = maybeImshow("Saliency", masked) ;
         if (controlChar == 'q')
         {
             break;
@@ -475,7 +475,7 @@ void nkhMain(path inVid, path inFile, path outDir)
         {
             cap.set(CV_CAP_PROP_POS_AVI_RATIO , 0);
         }
-*/
+//*/
         fpsCalcEnd();
         cout<< timerFPS << endl;
         frameCount++;
@@ -582,8 +582,8 @@ void cropGroundTruth(cv::VideoCapture cap, path inFile, path outDir)
                 //Scale ROI! annotation is done in 720p, the input is 1080p
                 //New-extend
                 double extendFactor = 0.8;
-                cv::Rect resizedBorder(tmpBorder.x*1.5 - extendFactor*tmpBorder.x,
-                                       tmpBorder.y*1.5 - extendFactor*tmpBorder.y,
+                cv::Rect resizedBorder(tmpBorder.x*1.5 - extendFactor*tmpBorder.width,
+                                       tmpBorder.y*1.5 - extendFactor*tmpBorder.height,
                                        tmpBorder.width*1.5 + 2*extendFactor*tmpBorder.width,
                                        tmpBorder.height*1.5 + 2*extendFactor*tmpBorder.height);
 //                cv::Rect resizedBorder(rand()%700 , rand()%600,
@@ -600,14 +600,14 @@ void cropGroundTruth(cv::VideoCapture cap, path inFile, path outDir)
         }
         else
         {
-            cv::Rect resizedBorder(0 , 350,
-                                   500, 500);
+//            cv::Rect resizedBorder(0 , 350,
+//                                   500, 500);
 
-            cv::Rect imgBounds(0,0,currentframe.cols, currentframe.rows);
-            resizedBorder = resizedBorder & imgBounds;
+//            cv::Rect imgBounds(0,0,currentframe.cols, currentframe.rows);
+//            resizedBorder = resizedBorder & imgBounds;
 
-            imwrite(outDir.string() + "/" + "else" + "_" +
-                    to_string(frameCount) + ".png", currentframe(resizedBorder));
+//            imwrite(outDir.string() + "/" + "else" + "_" +
+//                    to_string(frameCount) + ".png", currentframe(resizedBorder));
         }
 
         //imshow("Orig" , currentframe);
