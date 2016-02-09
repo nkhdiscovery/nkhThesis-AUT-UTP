@@ -88,14 +88,14 @@ int main(int argc, char *argv[])
     //QCoreApplication a(argc, argv);
 
     if (WITH_CUDA == 1) {
-        cerr << "USING CUDA\n";
+//        cerr << "USING CUDA\n";
 //        cv::gpu::setDevice(0); //not neede with opencv
     } else {
-        cerr << "NOT USING CUDA\n";
+//        cerr << "NOT USING CUDA\n";
     }
 
 #ifdef _OPENMP
-    cout << "USINGOPENMP\n";
+//    cout << "USINGOPENMP\n";
 #endif
 
     if (argc == 7)
@@ -134,7 +134,7 @@ void nkhMain(path inVid, path inFile, path outDir)
     cv::Mat currentFrame;
     int frameCount = 0;
     initFPSTimer();
-    vector<double> evalSaliency;
+    vector<double> evalColmask, evalNegColmask;
 
 //    cropGroundTruth(cap, inFile, outDir);
 //    cap.release();
@@ -158,6 +158,7 @@ void nkhMain(path inVid, path inFile, path outDir)
 
     int seg_sum = 0 , mser_sum = 0 ;
     long double fps_sum = 0, time_g = 0 , time_w = 0 , time_b = 0;
+
     while(true)
     {
         cap >> currentFrame;
@@ -221,20 +222,12 @@ void nkhMain(path inVid, path inFile, path outDir)
 
         computeSaliency(frameResized, 55 , saliency72);
 
-        cv::Mat testFFT;
-        timestamp_t t0 = get_timestamp();
 
-//        frameResized.convertTo(frameResized, CV_32FC1);
-//        cuda::GpuMat nt1(frameResized), nt2;
-//        nt1.convertTo(nt1, CV_32FC1, 1, 0);
-//        cuda::dft(nt1, nt1, Size(64,64));
-        measure<chrono::microseconds>(getDFTMag_CUDA, frameResized_gray2, testFFT);
-//        nt1.download(testFFT);
-        timestamp_t t1 = get_timestamp();
-
-        double secs = (t1 - t0) / 1000000.0L;
-        cout << "W1: " << secs << endl;
-        time_w += secs;
+//        timestamp_t t0 = get_timestamp();
+//        timestamp_t t1 = get_timestamp();
+//        double secs = (t1 - t0) / 1000000.0L;
+//        cout << "W1: " << secs << endl;
+//        time_w += secs;
 
          computeSaliency(edgeSmoothLow, 64 , saliencyV);
 
@@ -253,13 +246,13 @@ void nkhMain(path inVid, path inFile, path outDir)
         //threshold
         cv::Mat fin, whiteMask;
 
-        whiteThresh2(frameResized, saliency72, whiteMask);
+        whiteThresh2(edgeSmoothLow, saliency72, whiteMask);
 
 
         cv::Mat greenMask;
 
 //        t0 = get_timestamp();
-//        greenThresh1(frameResized, greenMask);
+        greenThresh1(edgeSmoothLow, greenMask);
 //        t1 = get_timestamp();
 //        secs = (t1 - t0) / 1000000.0L;
 //        cout << "G1: " << secs << endl;
@@ -267,7 +260,7 @@ void nkhMain(path inVid, path inFile, path outDir)
 
         cv::Mat brownMask;
 //        t0 = get_timestamp();
-        brownThresh1(frameResized, brownMask);
+        brownThresh1(edgeSmoothLow, brownMask);
 //        t1 = get_timestamp();
 //        secs = (t1 - t0) / 1000000.0L;
 //        cout << "B1: " << secs << endl;
@@ -532,26 +525,34 @@ void nkhMain(path inVid, path inFile, path outDir)
             cap.set(CV_CAP_PROP_POS_AVI_RATIO , 0);
         }
 */
+
+        //Eval
+        evaluateMasked(fin, groundTruth, frameCount, evalColmask);
+        evaluateNonMasked(fin, groundTruth, frameCount, evalNegColmask);
+
         imwrite(outDir.string() + "/" + "frame-" + to_string(frameCount) +".png", masked);
         fpsCalcEnd();
-        cout<< timerFPS  << "fps" << endl;
+//        cout<< timerFPS  << "fps" << endl;
         if(timerFPS != INFINITY)
             fps_sum += timerFPS;
         frameCount++;
         prevFrame_gray2 = frameResized_gray2.clone();
     }
-    calcMeanVar(evalSaliency);
-    cout << "Segs " << (double)seg_sum/frameCount << endl;
-    cout << "MSERs " << (double)mser_sum/frameCount << endl;
-    cout << "FPS " << (double)fps_sum/frameCount << endl;
-    cout << "W " << (double)time_w/frameCount << endl;
-    cout << "G " << (double)time_g/frameCount << endl;
-    cout << "B " << (double)time_b/frameCount << endl;
+    calcMeanVar(evalColmask, "dtf-nosal", false);
+    calcMeanVar(evalNegColmask, "dtf-nosal@neg");
+
+
+//    cout << "Segs " << (double)seg_sum/frameCount << endl;
+//    cout << "MSERs " << (double)mser_sum/frameCount << endl;
+//    cout << "FPS " << (double)fps_sum/frameCount << endl;
+//    cout << "W " << (double)time_w/frameCount << endl;
+//    cout << "G " << (double)time_g/frameCount << endl;
+//    cout << "B " << (double)time_b/frameCount << endl;
     //Handle Memory
     cap.release();
     currentFrame.release();
     groundTruth.clear();
-    evalSaliency.clear();
+    evalColmask.clear();
     //Free to Go!
 
     return;
@@ -575,6 +576,32 @@ void evaluateMasked(cv::Mat& binMask, map<int, FrameObjects>& groundTruth, int f
         }
     }
 }
+void evaluateNonMasked(cv::Mat& binMask, map<int, FrameObjects>& groundTruth, int frameNum, vector<double>& result) //binMask should be binary
+{
+    cv::Mat tmp=binMask.clone();
+    tmp.setTo(255);
+    map<int, FrameObjects>::iterator it = groundTruth.find(frameNum);
+
+    if(it != groundTruth.end())
+    {
+        FrameObjects tmpFrameObj = it->second;
+        for(unsigned int i=0 ; i < tmpFrameObj.getObjs().size(); i++)
+        {
+            if(tmpFrameObj.getObjs().at(i).getCategory() != PANEL_CATEGORY )
+                continue;
+
+            cv::Rect tmpBorder = tmpFrameObj.getObjs().at(i).getBorder();
+            resizeAntRecFrom1080(tmpBorder);
+            tmp(tmpBorder) = 0 ;
+            cv::rectangle(binMask, tmpBorder, cv::Scalar(0, 0, 0));
+        }
+        tmp = tmp & binMask;
+//        maybeImshow("neg", tmp);
+        //maybeImshow("bin", binMask);
+        result.push_back((double)countNonZero(tmp)/binMask.size().area());
+    }
+}
+
 
 void edgeAwareSmooth(cv::Mat &img, cv::Mat &dst)
 {

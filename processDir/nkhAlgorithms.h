@@ -479,7 +479,7 @@ void whiteThresh2(cv::Mat& edgeSmooth, cv::Mat& saliencyOrig, cv::Mat& fin)
 //    tmpOrig = cv::Mat(tmp.size().height, tmp.size().width, CV_8U, cv::Scalar(255,255,255)) - tmpOrig;
 //        cv::threshold(tmp, tmp, 20, 255, cv::THRESH_BINARY_INV);
         fin = (tmp) <1 ;//& (hlsChann[1]>=70) ;
-        cv::addWeighted(saliency, 0.5, fin, 0.5, -10, fin); //Play With it! //TODO
+//        cv::addWeighted(saliency, 0.5, fin, 0.5, -10, fin); //Play With it! //TODO
         cv::threshold(fin, fin, 170, 255, cv::THRESH_BINARY);
 
         return;
@@ -743,16 +743,20 @@ void drawOptFlowMap (const cv::Mat& flow, cv::Mat& cflowmap, int step, const cv:
 }
 
 /*------------------- nkhEnd Saliency -------------------*/
-
+void evaluateNonMasked(cv::Mat& binMask, map<int, FrameObjects>& groundTruth, int frameNum, vector<double>& result); //binMask should be binary
 void evaluateMasked(cv::Mat& masked, map<int, FrameObjects>& groundTruth, int frameNum, vector<double>& result);
-void calcMeanVar(vector<double>& result)
+void calcMeanVar(vector<double>& result, string name="", bool printLn=true)
 {
     double sum = std::accumulate(result.begin(), result.end(), 0.0);
     double mean = sum / result.size();
 
     double sq_sum = std::inner_product(result.begin(), result.end(), result.begin(), 0.0);
     double stdev = std::sqrt(sq_sum / result.size() - mean * mean);
-    cout << "Mean is " << mean << ", stdev is: " << stdev << endl;
+    cout << name << " ," << mean << "," << stdev ;
+    if(printLn)
+        cout << endl;
+    else
+        cout<< ",";
 }
 
 #endif // NKHALGORITHMS_H
