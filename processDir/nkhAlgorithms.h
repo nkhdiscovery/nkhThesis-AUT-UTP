@@ -12,7 +12,6 @@
 #include <opencv2/core/utility.hpp>
 
 #include <opencv2/bioinspired.hpp>
-#include <opencv2/contrib/retina.hpp>
 #include <opencv2/cudaimgproc.hpp>
 #include <opencv2/cudaarithm.hpp>
 #include <opencv2/cudafeatures2d.hpp>
@@ -88,6 +87,11 @@ NOT_REGULAR_FILE,
     rec.height /= RESIZE_FACTOR/1.5;\
     } //1.5 cuz of 1080p to 720p annotation
 
+#define resizeDetRecTo1080(rec) {rec.x *= RESIZE_FACTOR;\
+    rec.y *= RESIZE_FACTOR;\
+    rec.width *= RESIZE_FACTOR;\
+    rec.height *= RESIZE_FACTOR;\
+    } //1.5 cuz of 1080p to 720p annotation
 
 /******************** nkhStart opencv ********************/
     void nkhImshow(const char* windowName, cv::Mat& img)
@@ -475,7 +479,7 @@ void whiteThresh2(cv::Mat& edgeSmooth, cv::Mat& saliencyOrig, cv::Mat& fin)
 //    tmpOrig = cv::Mat(tmp.size().height, tmp.size().width, CV_8U, cv::Scalar(255,255,255)) - tmpOrig;
 //        cv::threshold(tmp, tmp, 20, 255, cv::THRESH_BINARY_INV);
         fin = (tmp) <1 ;//& (hlsChann[1]>=70) ;
-//        cv::addWeighted(saliency, 0.5, fin, 0.5, -10, fin); //Play With it! //TODO
+        cv::addWeighted(saliency, 0.5, fin, 0.5, -10, fin); //Play With it! //TODO
         cv::threshold(fin, fin, 170, 255, cv::THRESH_BINARY);
 
         return;
@@ -537,9 +541,10 @@ void brownThresh1(cv::Mat& orig , cv::Mat& fin)
 
     cv::cvtColor(orig, hls, CV_BGR2HLS);
     cv::split(hls, hlsChann);
-    cv::inRange(hls, cv::Scalar(12.5, 20, 63), cv::Scalar(14.5, 92, 204), fin); //Threshold the color
+    cv::inRange(hls, cv::Scalar(7, 20, 63), cv::Scalar(14.5, 192, 224), fin); //Threshold the color
+    //cv::inRange(hls, cv::Scalar(12.5, 20, 63), cv::Scalar(14.5, 92, 204), fin); //Threshold the color   LESS REGS
 //    fin = (tmp1 & (hlsChann[1]<155) & (hlsChann[2]< 100) & (hlsChann[1]>=25)) | fin ;//& (hlsChann[0]<=90);// (hlsChann[2]>=15)& ;
-//    fin |= (hlsChann[1]<43) & (hlsChann[2]<128) & (hlsChann[0] <89);
+//    fin |= (hlsChann[1]<43) & (hlsChrann[2]<128) & (hlsChann[0] <89);
     return;
 }
 
