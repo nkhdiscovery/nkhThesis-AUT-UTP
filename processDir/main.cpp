@@ -191,7 +191,7 @@ void nkhMain(path inVid, path inFile, path outDir)
         //Mat edgeSmooth = measure<std::chrono::milliseconds>(edgeAwareSmooth, frameResized);
         cv::Mat edgeSmooth, edgeSmooth_gray, edgeSmooth_resize2, edgeSmooth_Half;
 
-        dtfWrapper(frameResized, edgeSmooth);
+        dtfWrapper( frameResized, edgeSmooth);
         //dtfWrapper(frameResizedHalf, edgeSmooth_Half);
         cv::blur(frameResizedHalf, edgeSmooth_Half, Size(21,21));
         cv::Mat edgeSmoothLow, edgeSmoothLow_gray;
@@ -223,9 +223,9 @@ void nkhMain(path inVid, path inFile, path outDir)
         computeSaliency(frameResized, 55 , saliency72);
 
 
-//        timestamp_t t0 = get_timestamp();
-//        timestamp_t t1 = get_timestamp();
-//        double secs = (t1 - t0) / 1000000.0L;
+        timestamp_t t0 = get_timestamp();
+        timestamp_t t1 = get_timestamp();
+        double secs = (t1 - t0) / 1000000.0L;
 //        cout << "W1: " << secs << endl;
 //        time_w += secs;
 
@@ -246,7 +246,7 @@ void nkhMain(path inVid, path inFile, path outDir)
         //threshold
         cv::Mat fin, whiteMask;
 
-        whiteThresh2(edgeSmoothLow, saliency72, whiteMask);
+        whiteThresh2(frameResized, saliency72, whiteMask);
 
 
         cv::Mat greenMask;
@@ -259,8 +259,8 @@ void nkhMain(path inVid, path inFile, path outDir)
 //        time_g += secs;
 
         cv::Mat brownMask;
-//        t0 = get_timestamp();
         brownThresh1(edgeSmoothLow, brownMask);
+//        t0 = get_timestamp();
 //        t1 = get_timestamp();
 //        secs = (t1 - t0) / 1000000.0L;
 //        cout << "B1: " << secs << endl;
@@ -318,24 +318,40 @@ void nkhMain(path inVid, path inFile, path outDir)
 
         //MSER
 /*
+
         std::vector< std::vector< cv::Point> > contours;
         std::vector< cv::Rect> bboxes;
         // Ptr< MSER> mser = MSER::create(21, (int)(0.00002*textImg.cols*textImg.rows),
         //(int)(0.05*textImg.cols*textImg.rows), 1, 0.7);
-        cv::Ptr< cv::MSER> mser = cv::MSER::create(5, 200, frameResized.size().area()/3.0, 0.01);
-        mser->detectRegions(edgeMasked, contours, bboxes);
-        for (int i = 0; i < bboxes.size(); i++)
-        {
-            Scalar color = Scalar( rand()%255,rand()%255,rand()%255 );
-            cv::rectangle(edgeMasked, bboxes[i], color);
-            resizeDetRecTo1080(bboxes[i]);
-            char name[20];
-            sprintf(name, "/mser-f%d", frameCount);
-//            cout<< outDir.string()  << endl ;
-            imwrite(outDir.string() + name + "n" + to_string(i) +".png", currentFrame(bboxes[i]));
-        }
+        t0 = get_timestamp();
+        cv::Ptr< cv::MSER> mser = cv::MSER::create();//5, 200, frameResized.size().area()/3.0, 0.01);
+        mser->detectRegions(frameResized, contours, bboxes);
+        cv::Mat tmpMserMask = cv::Mat::zeros(masked.rows, masked.cols, fin.type());
+
+        for (vector<cv::Point> v : contours){
+//            Vec3b color(rand()%255,rand()%255,rand()%255);
+                for (cv::Point p : v){
+                    tmpMserMask.at<uchar>(p.y, p.x) = 255;
+//                    frameResized.at<Vec3b>(Point(p.x, p.y)) = color;
+                }
+            }
+        tmpMserMask &= twoThird;
+//        for (int i = 0; i < bboxes.size(); i++)
+//        {
+//            char name[20];
+//            sprintf(name, "/mser-f%d", frameCount);
+//            resizeDetRecTo1080(bboxes[i]);
+//            imwrite(outDir.string() + name + "n" + to_string(i) +".png", currentFrame(bboxes[i]));
+//        }
+
+
+//        maybeImshow("mserbb", tmpMserMask);
         mser_sum += contours.size();
-        cout << "MSERS " << contours.size() << endl;
+        t1 = get_timestamp();
+        secs = (t1 - t0) / 1000000.0L;
+//        cout << "B1: " << secs << endl;
+        time_b += secs;
+//        cout << "MSERS " << contours.size() << endl;
 */
 
         //contour appx
@@ -447,10 +463,12 @@ void nkhMain(path inVid, path inFile, path outDir)
 //        costMatrixes[2]=brownMask.clone();
 //        cv::merge(costMatrixes, 3, costMatrix);
 */
-//        nkhSeg(segPtr, edgeSmooth, costMatrix, egbisSeg);
-//        int nb_segs = egbisVisualise(egbisSeg, egbisImage);
-//        seg_sum += nb_segs;
-        /*
+        nkhSeg(segPtr, edgeSmooth, costMatrix, egbisSeg);
+        int nb_segs = egbisVisualise(egbisSeg, egbisImage);
+        seg_sum += nb_segs;
+//        /*
+        cv::Mat tmpEgbMask = cv::Mat::zeros(egbisImage.rows, egbisImage.cols, fin.type());
+         cv::Mat toWrite = frameResized.clone(), edgTowrite(edgeSmooth);
         for (int i = 0 ; i <= nb_segs ; i++)
         {
             cv::Mat s1;
@@ -458,46 +476,37 @@ void nkhMain(path inVid, path inFile, path outDir)
 //            imshow("t1" , s1&fin);
 //            cvWaitKey(10);
 
-            if(cv::countNonZero(s1&fin) < 0.7*cv::countNonZero(s1))
+            if(cv::countNonZero(s1&fin) < 0.2*cv::countNonZero(s1))
                 continue;
+            tmpEgbMask |= s1;
             char name[20];
             sprintf(name, "f%d-%d", frameCount, i);
-            cv::Mat toWrite(edgeSmooth_Half);
-            cv::resize(s1, s1, Size(frameResizedHalf.size().width,
-                                    frameResizedHalf.size().height));
-
 
             vector<vector<Point> > contours;
              vector<Vec4i> hierarchy;
-
              /// Detect edges using Threshold             /// Find contours
              findContours( s1, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
-
              /// Approximate contours to polygons + get bounding rects and circles
-             vector<vector<Point> > contours_poly( contours.size() );
              vector<Rect> boundRect( contours.size() );
-             vector<Point2f>center( contours.size() );
-             vector<float>radius( contours.size() );
-
              for( int i = 0; i < contours.size(); i++ )
-                { approxPolyDP( Mat(contours[i]), contours_poly[i], 3, true );
-                  boundRect[i] = boundingRect( Mat(contours_poly[i]) );
-                }
-
-
-             /// Draw polygonal contour + bonding rects + circles
-             for( int i = 0; i< contours.size(); i++ )
                 {
-//                  Scalar color = Scalar( 0,255,255 );
-//                  drawContours( drawing, contours_poly, i, color, 1, 8, vector<Vec4i>(), 0, Point() );
-                    frameResizedHalf.copyTo(toWrite, s1);
-//                  rectangle( drawing, boundRect[i].tl(), boundRect[i].br(), color, 2, 8, 0 );
-                    imwrite(outDir.string() + "/" + name + "c" + to_string(i) +".png", toWrite(boundRect[i]));
+                  boundRect[i] = boundingRect( contours[i] );
+                  frameResized.copyTo(edgTowrite,s1);
+                  imwrite(outDir.string() + "/" + name + "c" + to_string(i) +".png", edgTowrite(boundRect[i]));
+                  Scalar color = Scalar( rand()%255, rand()%255, rand()%255 );
+                  rectangle( toWrite, boundRect[i].tl(), boundRect[i].br(), color, 2, 8, 0 );
                 }
-//             maybeImshow("cont", drawing, 30) ;
+//             /// Draw polygonal contour + bonding rects + circles
+//             for( int i = 0; i< contours.size(); i++ )
+//                {
+////                  Scalar color = Scalar( 0,255,255 );
+////                  drawContours( drawing, contours_poly, i, color, 1, 8, vector<Vec4i>(), 0, Point() );
+//                    frameResizedHalf.copyTo(toWrite, s1);
+////                  rectangle( drawing, boundRect[i].tl(), boundRect[i].br(), color, 2, 8, 0 );
+//                }
 
         }
-        */
+//        */
 /*
 //         cv::cuda::Stream stream[3];
 //         for(int i=0; i<3; i++){
@@ -527,10 +536,12 @@ void nkhMain(path inVid, path inFile, path outDir)
 */
 
         //Eval
-        evaluateMasked(fin, groundTruth, frameCount, evalColmask);
-        evaluateNonMasked(fin, groundTruth, frameCount, evalNegColmask);
+        evaluateMasked(tmpEgbMask, groundTruth, frameCount, evalColmask);
+        evaluateNonMasked(tmpEgbMask, groundTruth, frameCount, evalNegColmask);
 
-        imwrite(outDir.string() + "/" + "frame-" + to_string(frameCount) +".png", masked);
+                     maybeImshow("cont", toWrite, 30) ;
+
+        imwrite(outDir.string() + "/" + "frame-" + to_string(frameCount) +".png", toWrite);
         fpsCalcEnd();
 //        cout<< timerFPS  << "fps" << endl;
         if(timerFPS != INFINITY)
@@ -538,8 +549,8 @@ void nkhMain(path inVid, path inFile, path outDir)
         frameCount++;
         prevFrame_gray2 = frameResized_gray2.clone();
     }
-    calcMeanVar(evalColmask, "dtf-nosal", false);
-    calcMeanVar(evalNegColmask, "dtf-nosal@neg");
+    calcMeanVar(evalColmask, "egbis", false);
+    calcMeanVar(evalNegColmask, "egbis-neg");
 
 
 //    cout << "Segs " << (double)seg_sum/frameCount << endl;

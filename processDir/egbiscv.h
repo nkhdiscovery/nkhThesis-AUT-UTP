@@ -424,7 +424,7 @@ int egbisVisualise(cv::Mat &egbisImage, cv::Mat& visualEgbis)
     visualEgbis = cv::Mat::zeros(egbisImage.rows, egbisImage.cols, CV_8UC3);
     cv::merge(channs, 3, visualEgbis);
     cvtColor(visualEgbis, visualEgbis, COLOR_HSV2RGB);
-    std::cout << nb_segs << " segments" << std::endl;
+//    std::cout << nb_segs << " segments" << std::endl;
     return nb_segs;
 //    visualEgbis = cv::Mat::zeros(egbisImage.rows, egbisImage.cols, CV_8UC3);
 //    uint* p;
