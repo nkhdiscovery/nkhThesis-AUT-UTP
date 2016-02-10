@@ -302,7 +302,9 @@ void nkhMain(path inVid, path inFile, path outDir)
 //             }
 //         }
 */
-///*
+
+        //Visualization
+        /*
         char controlChar = maybeImshow("Orig", masked, 30) ;
 
         controlChar = maybeImshow("Saliency", egbisImage) ;
@@ -318,10 +320,10 @@ void nkhMain(path inVid, path inFile, path outDir)
         {
             cap.set(CV_CAP_PROP_POS_AVI_RATIO , 0);
         }
-//*/
+*/
 //        imwrite(outDir.string() + "/" + "frame-" + to_string(frameCount) +".png", toWrite);
 
-        //Eval
+        //Evaluation
         /*
         evaluateMasked(tmpEgbMask, groundTruth, frameCount, evalColmask);
         evaluateNonMasked(tmpEgbMask, groundTruth, frameCount, evalNegColmask);
@@ -337,7 +339,7 @@ void nkhMain(path inVid, path inFile, path outDir)
 //    calcMeanVar(evalNegColmask, "egbis-neg");
 
     cout << "FPS " << (double)fps_sum/frameCount << endl;
-    cout << "B " << (double)time_b/frameCount << endl;
+    cout << "segs " << (double)seg_sum/frameCount << endl;
 
     //Handle Memory
     cap.release();
