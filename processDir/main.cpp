@@ -127,7 +127,7 @@ void nkhMain(path inVid, path inFile, path outDir)
     cv::setNumThreads(16);
     cv::VideoCapture cap(inVid.string());
     
-    //Task 1.5: open the map for evaluation
+    //open the map for evaluation
     map<int, FrameObjects> groundTruth;
     parseFile(inFile, groundTruth);
 
@@ -154,10 +154,8 @@ void nkhMain(path inVid, path inFile, path outDir)
     }
     */
 
-    cv::Mat prevFrame_gray2, flowImg;
-
-    int seg_sum = 0 , mser_sum = 0 ;
-    long double fps_sum = 0, time_g = 0 , time_w = 0 , time_b = 0;
+    int seg_sum = 0;
+    long double fps_sum = 0, time_b = 0;
 
     while(true)
     {
@@ -169,59 +167,27 @@ void nkhMain(path inVid, path inFile, path outDir)
             break;
         }
         fpsCalcStart();
-        cv::Mat frameResized, frameResizedHalf_gray,frameResized_gray2, frameResizedHalf, frameResized2;
+        cv::Mat frameResized;
         cv::resize(currentFrame, frameResized, cv::Size(currentFrame.size().width/RESIZE_FACTOR,
                                              currentFrame.size().height/RESIZE_FACTOR));
 
-        cv::resize(currentFrame, frameResized2, cv::Size(currentFrame.size().width/RESIZE_FACTOR2,
-                                             currentFrame.size().height/RESIZE_FACTOR2));
-
-        cv::resize(currentFrame, frameResizedHalf, cv::Size(currentFrame.size().width/2,
-                                             currentFrame.size().height/2));
-        cv::cvtColor(frameResizedHalf, frameResizedHalf_gray, cv::COLOR_BGR2GRAY);
-        cv::cvtColor(frameResized2, frameResized_gray2, cv::COLOR_BGR2GRAY);
-
-
-        if(prevFrame_gray2.empty())
-        {
-            prevFrame_gray2 = frameResized_gray2.clone();
-            continue;
-        }
-        //TODO: implement with GPU
-        //Mat edgeSmooth = measure<std::chrono::milliseconds>(edgeAwareSmooth, frameResized);
-        cv::Mat edgeSmooth, edgeSmooth_gray, edgeSmooth_resize2, edgeSmooth_Half;
+        cv::Mat edgeSmooth;
 
         dtfWrapper( frameResized, edgeSmooth);
-        //dtfWrapper(frameResizedHalf, edgeSmooth_Half);
-        cv::blur(frameResizedHalf, edgeSmooth_Half, Size(21,21));
-        cv::Mat edgeSmoothLow, edgeSmoothLow_gray;
+        cv::Mat edgeSmoothLow;
         cv::ximgproc::dtFilter(frameResized, frameResized, edgeSmoothLow, 20, 140, cv::ximgproc::DTF_RF); //r 350. 50. nc
 
-
-        cv::cvtColor(edgeSmooth, edgeSmooth_gray, cv::COLOR_BGR2GRAY);
-        cv::cvtColor(edgeSmoothLow, edgeSmoothLow_gray, cv::COLOR_BGR2GRAY);
-
-//        edgeSmooth = colorReduce(edgeSmooth, 64);
-//        edgeSmoothLow = colorReduce(edgeSmoothLow, 64);
-
-        cv::resize(edgeSmoothLow, edgeSmooth_resize2, cv::Size(currentFrame.size().width/RESIZE_FACTOR2,
-
-                                                               currentFrame.size().height/RESIZE_FACTOR2));
-
-
-        cv::Mat hsvFrameRes2, labFrameRes2, hlsFrameRes2, hsvResized, saliencyV;
-        cv::cvtColor(frameResized2, hsvFrameRes2, cv::COLOR_BGR2HSV);
-        cv::cvtColor(frameResized2, hsvResized, cv::COLOR_BGR2HLS);
-        cv::cvtColor(frameResized2, labFrameRes2, cv::COLOR_BGR2Lab);
-        cv::cvtColor(frameResized2, hlsFrameRes2, cv::COLOR_BGR2HLS);
-        cv::Mat chans[3];
-        cv::split(hsvResized, chans);
+//        cv::Mat hsvFrameRes2, labFrameRes2, hlsFrameRes2, hsvResized, saliencyV;
+//        cv::cvtColor(frameResized2, hsvFrameRes2, cv::COLOR_BGR2HSV);
+//        cv::cvtColor(frameResized2, hsvResized, cv::COLOR_BGR2HLS);
+//        cv::cvtColor(frameResized2, labFrameRes2, cv::COLOR_BGR2Lab);
+//        cv::cvtColor(frameResized2, hlsFrameRes2, cv::COLOR_BGR2HLS);
+//        cv::Mat chans[3];
+//        cv::split(hsvResized, chans);
         //SaliencyMap
-        cv::Mat saliency, saliency72, saliencyOrig, saliency72Orig;
+        cv::Mat saliency, saliency72, saliencyOrig;
         computeSaliency(frameResized, 55 , saliency);
-
-        computeSaliency(frameResized, 55 , saliency72);
-
+        //computeSaliency(frameResized, 55 , saliency72);
 
         timestamp_t t0 = get_timestamp();
         timestamp_t t1 = get_timestamp();
@@ -229,16 +195,16 @@ void nkhMain(path inVid, path inFile, path outDir)
 //        cout << "W1: " << secs << endl;
 //        time_w += secs;
 
-         computeSaliency(edgeSmoothLow, 64 , saliencyV);
+//         computeSaliency(edgeSmoothLow, 64 , saliencyV);
 
         saliencyOrig = saliency.clone();
-        saliency72Orig = saliency72.clone();
+//        saliency72Orig = saliency72.clone();
 
         cv::Mat masked, binMask;
         saliency = saliency * 3;
-        saliency72 = saliency72 * 3;
+//        saliency72 = saliency72 * 3;
         saliency.convertTo( saliency, CV_8U );
-        saliency72.convertTo( saliency72, CV_8U );
+//        saliency72.convertTo( saliency72, CV_8U );
         // adaptative thresholding using Otsu's method, to make saliency map binary
         threshold( saliency, binMask, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU );
         //edgeAwareSmooth(frameResized, edgeSmooth);
@@ -246,7 +212,7 @@ void nkhMain(path inVid, path inFile, path outDir)
         //threshold
         cv::Mat fin, whiteMask;
 
-        whiteThresh2(frameResized, saliency72, whiteMask);
+        whiteThresh2(frameResized, saliency, whiteMask);
 
 
         cv::Mat greenMask;
@@ -463,10 +429,16 @@ void nkhMain(path inVid, path inFile, path outDir)
 //        costMatrixes[2]=brownMask.clone();
 //        cv::merge(costMatrixes, 3, costMatrix);
 */
+        t0 = get_timestamp();
         nkhSeg(segPtr, edgeSmooth, costMatrix, egbisSeg);
+        t1 = get_timestamp();
+        secs = (t1 - t0) / 1000000.0L;
+//        cout << "B1: " << secs << endl;
+        time_b += secs;
+
         int nb_segs = egbisVisualise(egbisSeg, egbisImage);
         seg_sum += nb_segs;
-//        /*
+        /*
         cv::Mat tmpEgbMask = cv::Mat::zeros(egbisImage.rows, egbisImage.cols, fin.type());
          cv::Mat toWrite = frameResized.clone(), edgTowrite(edgeSmooth);
         for (int i = 0 ; i <= nb_segs ; i++)
@@ -506,7 +478,7 @@ void nkhMain(path inVid, path inFile, path outDir)
 //                }
 
         }
-//        */
+        */
 /*
 //         cv::cuda::Stream stream[3];
 //         for(int i=0; i<3; i++){
@@ -536,29 +508,29 @@ void nkhMain(path inVid, path inFile, path outDir)
 */
 
         //Eval
-        evaluateMasked(tmpEgbMask, groundTruth, frameCount, evalColmask);
-        evaluateNonMasked(tmpEgbMask, groundTruth, frameCount, evalNegColmask);
+//        evaluateMasked(tmpEgbMask, groundTruth, frameCount, evalColmask);
+//        evaluateNonMasked(tmpEgbMask, groundTruth, frameCount, evalNegColmask);
 
 //                     maybeImshow("cont", toWrite, 30) ;
 
-        imwrite(outDir.string() + "/" + "frame-" + to_string(frameCount) +".png", toWrite);
+//        imwrite(outDir.string() + "/" + "frame-" + to_string(frameCount) +".png", toWrite);
         fpsCalcEnd();
 //        cout<< timerFPS  << "fps" << endl;
         if(timerFPS != INFINITY)
             fps_sum += timerFPS;
         frameCount++;
-        prevFrame_gray2 = frameResized_gray2.clone();
+//        prevFrame_gray2 = frameResized_gray2.clone();
     }
-    calcMeanVar(evalColmask, "egbis", false);
-    calcMeanVar(evalNegColmask, "egbis-neg");
+//    calcMeanVar(evalColmask, "egbis", false);
+//    calcMeanVar(evalNegColmask, "egbis-neg");
 
 
 //    cout << "Segs " << (double)seg_sum/frameCount << endl;
 //    cout << "MSERs " << (double)mser_sum/frameCount << endl;
-//    cout << "FPS " << (double)fps_sum/frameCount << endl;
+    cout << "FPS " << (double)fps_sum/frameCount << endl;
 //    cout << "W " << (double)time_w/frameCount << endl;
 //    cout << "G " << (double)time_g/frameCount << endl;
-//    cout << "B " << (double)time_b/frameCount << endl;
+    cout << "B " << (double)time_b/frameCount << endl;
     //Handle Memory
     cap.release();
     currentFrame.release();
