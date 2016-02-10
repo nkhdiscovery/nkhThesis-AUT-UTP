@@ -142,15 +142,6 @@ cv::Scalar color_mapping(int segment_id) {
 }
 
 
-void nkhSegment(cv::Mat& in, cv::Mat& out)
-{
-
-}
-
-void matToMat2(cv::Mat& in, Mat2<float3>& out){
-    //out.data = in.data;
-}
-
 void mat2ToMat(Mat2<float3>& in, cv::Mat& out)
 {
     out = cv::Mat(in.height, in.width, CV_32F, in.data);
@@ -546,13 +537,6 @@ void brownThresh1(cv::Mat& orig , cv::Mat& fin)
 //    fin = (tmp1 & (hlsChann[1]<155) & (hlsChann[2]< 100) & (hlsChann[1]>=25)) | fin ;//& (hlsChann[0]<=90);// (hlsChann[2]>=15)& ;
 //    fin |= (hlsChann[1]<43) & (hlsChrann[2]<128) & (hlsChann[0] <89);
     return;
-}
-
-void connectedMask(cv::Mat& smoothed, cv::Mat& conMap)
-{
-//    cv::cuda::GpuMat devSmooth(smoothed), devMap;
-//    cv::cuda::connectivityMask(devSmooth, devMap, cv::Scalar::all(0), cv::Scalar::all(2));
-//    devMap.download(conMap);
 }
 
 void getDFTMag(cv::Mat& I, cv::Mat& complexI, cv::Mat& magI)

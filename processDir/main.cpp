@@ -159,11 +159,15 @@ void nkhMain(path inVid, path inFile, path outDir)
 
     while(true)
     {
+        timestamp_t t0, t1;
+        double secs = 0;
         cap >> currentFrame;
         if(currentFrame.size().area() <= 0)
         {
-//            cap.set(CV_CAP_PROP_POS_AVI_RATIO , 0);
-//            continue;
+            /*
+            cap.set(CV_CAP_PROP_POS_AVI_RATIO , 0);
+            continue;
+            */
             break;
         }
         fpsCalcStart();
@@ -177,245 +181,53 @@ void nkhMain(path inVid, path inFile, path outDir)
         cv::Mat edgeSmoothLow;
         cv::ximgproc::dtFilter(frameResized, frameResized, edgeSmoothLow, 20, 140, cv::ximgproc::DTF_RF); //r 350. 50. nc
 
-//        cv::Mat hsvFrameRes2, labFrameRes2, hlsFrameRes2, hsvResized, saliencyV;
-//        cv::cvtColor(frameResized2, hsvFrameRes2, cv::COLOR_BGR2HSV);
-//        cv::cvtColor(frameResized2, hsvResized, cv::COLOR_BGR2HLS);
-//        cv::cvtColor(frameResized2, labFrameRes2, cv::COLOR_BGR2Lab);
-//        cv::cvtColor(frameResized2, hlsFrameRes2, cv::COLOR_BGR2HLS);
-//        cv::Mat chans[3];
-//        cv::split(hsvResized, chans);
+        //Channles
+        /*
+        cv::Mat hsvFrameRes2, labFrameRes2, hlsFrameRes2, hsvResized, saliencyV;
+        cv::cvtColor(frameResized2, hsvFrameRes2, cv::COLOR_BGR2HSV);
+        cv::cvtColor(frameResized2, hsvResized, cv::COLOR_BGR2HLS);
+        cv::cvtColor(frameResized2, labFrameRes2, cv::COLOR_BGR2Lab);
+        cv::cvtColor(frameResized2, hlsFrameRes2, cv::COLOR_BGR2HLS);
+        cv::Mat chans[3];
+        cv::split(hsvResized, chans);
+        */
         //SaliencyMap
-        cv::Mat saliency, saliency72, saliencyOrig;
+        cv::Mat saliency;
         computeSaliency(frameResized, 55 , saliency);
-        //computeSaliency(frameResized, 55 , saliency72);
-
-        timestamp_t t0 = get_timestamp();
-        timestamp_t t1 = get_timestamp();
-        double secs = (t1 - t0) / 1000000.0L;
-//        cout << "W1: " << secs << endl;
-//        time_w += secs;
-
-//         computeSaliency(edgeSmoothLow, 64 , saliencyV);
-
-        saliencyOrig = saliency.clone();
-//        saliency72Orig = saliency72.clone();
-
         cv::Mat masked, binMask;
         saliency = saliency * 3;
-//        saliency72 = saliency72 * 3;
         saliency.convertTo( saliency, CV_8U );
-//        saliency72.convertTo( saliency72, CV_8U );
         // adaptative thresholding using Otsu's method, to make saliency map binary
         threshold( saliency, binMask, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU );
-        //edgeAwareSmooth(frameResized, edgeSmooth);
 
         //threshold
         cv::Mat fin, whiteMask;
-
         whiteThresh2(frameResized, saliency, whiteMask);
-
-
         cv::Mat greenMask;
-
-//        t0 = get_timestamp();
         greenThresh1(edgeSmoothLow, greenMask);
-//        t1 = get_timestamp();
-//        secs = (t1 - t0) / 1000000.0L;
-//        cout << "G1: " << secs << endl;
-//        time_g += secs;
-
         cv::Mat brownMask;
         brownThresh1(edgeSmoothLow, brownMask);
-//        t0 = get_timestamp();
-//        t1 = get_timestamp();
-//        secs = (t1 - t0) / 1000000.0L;
-//        cout << "B1: " << secs << endl;
-//        time_b += secs;
 
-        /*
-        //TODO: Weight if needed
-
-//        cv::Mat fin2;
-//        greenThresh1(edgeSmoothLow, edgeSmooth, saliency, fin2);
-//        cv::addWeighted(fin, 0.2, fin2, 0.2, 0 , fin);
-//        cv::threshold(fin, greenMask, 100, 255, cv::THRESH_BINARY);
-
-        //TODO: eval
-        //evaluate Correlation
-        //evaluateMasked(binMask, groundTruth, frameCount, evalSaliency);
-
-        */
-
-        /*
-//        int erosionDilation_size = 3;
-//        cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT,
-//                                                    cv::Size(2*erosionDilation_size + 1,
-//                                                             2*erosionDilation_size+1));
-*/
         cv::Mat colorMask = whiteMask | greenMask |  brownMask;
-//        */
 
-        /*
-        cv::blur(colorMask, colorMask, cv::Size(12,12));
-        cv::erode(colorMask, colorMask, element);
-        cv::dilate(colorMask, colorMask, element);
-        */
 
-//        /*
         frameResized.copyTo(masked, colorMask);
-        cv::Mat twoThird(colorMask);// = cv::Mat::zeros(edgeSmooth.rows, edgeSmooth.cols, edgeSmooth.type());
+        cv::Mat twoThird(colorMask);
         twoThird(cv::Rect(0,2*twoThird.size().height/3.0,
                           twoThird.size().width, twoThird.size().height/3.0)) = cv::Scalar::all(0);
         cv::Mat tmp;
         masked.copyTo(tmp, twoThird);
-        cv::Mat saliency32;
-        computeSaliency(tmp, 32, saliency32);
-        saliency32 *= 3;
-        saliency32.convertTo( saliency32, CV_8U );
-        threshold( saliency32, binMask, 0, 255, cv::THRESH_BINARY );
-        fin = colorMask & twoThird ;//& binMask;
+        fin = colorMask & twoThird ;
         masked.release();
         tmp.copyTo(masked, fin);
-        cv::Mat edgeMasked(edgeSmoothLow);
-        edgeSmooth.copyTo(edgeMasked, fin);
-//        */
 
+        cv::Mat egbisImage, egbisSeg;
 
-
-        //MSER
-/*
-
-        std::vector< std::vector< cv::Point> > contours;
-        std::vector< cv::Rect> bboxes;
-        // Ptr< MSER> mser = MSER::create(21, (int)(0.00002*textImg.cols*textImg.rows),
-        //(int)(0.05*textImg.cols*textImg.rows), 1, 0.7);
-        t0 = get_timestamp();
-        cv::Ptr< cv::MSER> mser = cv::MSER::create();//5, 200, frameResized.size().area()/3.0, 0.01);
-        mser->detectRegions(frameResized, contours, bboxes);
-        cv::Mat tmpMserMask = cv::Mat::zeros(masked.rows, masked.cols, fin.type());
-
-        for (vector<cv::Point> v : contours){
-//            Vec3b color(rand()%255,rand()%255,rand()%255);
-                for (cv::Point p : v){
-                    tmpMserMask.at<uchar>(p.y, p.x) = 255;
-//                    frameResized.at<Vec3b>(Point(p.x, p.y)) = color;
-                }
-            }
-        tmpMserMask &= twoThird;
-//        for (int i = 0; i < bboxes.size(); i++)
-//        {
-//            char name[20];
-//            sprintf(name, "/mser-f%d", frameCount);
-//            resizeDetRecTo1080(bboxes[i]);
-//            imwrite(outDir.string() + name + "n" + to_string(i) +".png", currentFrame(bboxes[i]));
-//        }
-
-
-//        maybeImshow("mserbb", tmpMserMask);
-        mser_sum += contours.size();
-        t1 = get_timestamp();
-        secs = (t1 - t0) / 1000000.0L;
-//        cout << "B1: " << secs << endl;
-        time_b += secs;
-//        cout << "MSERS " << contours.size() << endl;
-*/
-
-        //contour appx
-
-/*
-        cv::Mat grad_x, grad_y;
-        cv::Mat abs_grad_x, abs_grad_y;
-
-        /// Gradient X
-        //Scharr( src_gray, grad_x, ddepth, 1, 0, scale, delta, BORDER_DEFAULT );
-        cv::Sobel( edgeSmooth_gray, grad_x, CV_16S, 1, 0, 3, 1, 0, cv::BORDER_DEFAULT );
-        cv::convertScaleAbs( grad_x, abs_grad_x );
-        cv::Sobel( edgeSmooth_gray, grad_y, CV_16S, 0, 1, 3, 1, 0, cv::BORDER_DEFAULT );
-        cv::convertScaleAbs( grad_y, abs_grad_y );
-        cv::addWeighted(abs_grad_y, 0.5, abs_grad_x, 0.5, 0, abs_grad_x);
-//        saliency32 *=20 ;
-//        cv::addWeighted(saliency, 0.7, abs_grad_x, 0.5, 0, abs_grad_x);
-//        abs_grad_x &= colorMask;
-        cv::threshold(abs_grad_x, abs_grad_x, 30, 255, cv::THRESH_BINARY);
-        //cv::ximgproc::dtFilter(abs_grad_x, abs_grad_x, abs_grad_x, 70, 70, cv::ximgproc::DTF_RF); //r 350. 50. nc
-*/
-
-        /*
-        cv::Mat edgeImg;
-        cv::cuda::GpuMat devSmooth(frameResized2), devEqHist, devGraySmooth(frameResized_gray2), devEdgeImg;
-//        cv::cuda::cvtColor(devSmooth, devGraySmooth, cv::COLOR_BGR2GRAY);
-//        cv::cuda::equalizeHist(devGraySmooth, devEqHist);
-        cv::Ptr<cv::cuda::Filter> laplacPtr = cv::cuda::createLaplacianFilter(devGraySmooth.type(), devGraySmooth.type(),
-                                                                              3, 1);
-        laplacPtr->apply(devGraySmooth, devEdgeImg);
-//        cv::Ptr<cv::cuda::CannyEdgeDetector> cudaCanny = cv::cuda::createCannyEdgeDetector(100, 200);
-//        cudaCanny->detect(devGraySmooth, devEdgeImg);
-        //        /*
-//        int erosionDilation_size = 3;
-//        Mat element = cv::getStructuringElement(MORPH_RECT, Size(2*erosionDilation_size + 1,    2*erosionDilation_size+1));
-//        Ptr<cuda::Filter> dilateFilter = cuda::createMorphologyFilter(MORPH_ERODE, devEdgeImg.type(), element);
-//        dilateFilter->apply(devEdgeImg, devEdgeImg);
-        devEdgeImg.download(edgeImg);
-
-         */
-
-        /*
-        //        edgeImg &= fin;
-        //cv::ximgproc::dtFilter(edgeImg, edgeImg, edgeImg, 80, 190, cv::ximgproc::DTF_RF); //r 350. 50. nc
-
-        //
-        */
-
-        //Visualize
-
-        //OpticalFlow
-        /*
-//        cv::cuda::GpuMat devPrev(prevFrame_gray2), devCurr(frameResized_gray2), devFlow;
-//        cv::Ptr <cv::cuda::FarnebackOpticalFlow> optflowPtr = cv::cuda::FarnebackOpticalFlow::create(2, 0.5, true, 10, 3,5, 1.2);
-        cv::calcOpticalFlowFarneback(prevFrame_gray2, frameResized_gray2, flowImg, 0.5, 3, 15, 3, 5, 1.2,0);
-//        optflowPtr->calc(devPrev, devCurr, devFlow);
-
-
-        cv::Mat cflow;
-//        devFlow.download(cflow);
-        cvtColor(prevFrame_gray2, cflow, CV_GRAY2BGR);
-
-        drawOptFlowMap(flowImg, cflow, 2, CV_RGB(0, 255, 0));
-*/
-        /*
-        cv::resize(fin, fin, frameResizedHalf.size());
-        cv::Mat maskedHalf;
-        frameResizedHalf.copyTo(maskedHalf, fin);
-        */
-
-        cv::Mat egbisImage, tmpOut;
-        cv::Mat currTest(hlsFrameRes2);
-        currTest.copyTo(tmpOut);
-//        cv::cvtColor(tmpOut, labFrameRes2, cv::COLOR_Lab2BGR);
-        int minSegSize = tmpOut.size().area()/200;
-
-        cv::Mat egbisSeg, grayImg;
-        /*
-//        cvtColor(frameResized2, grayImg, COLOR_BGR2GRAY);
-//        Mat grad_x, grad_y;
-//        Mat abs_grad_x, abs_grad_y;
-
-//        int scale = 1;
-//        int delta = 0;
-//        int ddepth = CV_16S;
-//        /// Gradient X
-//        Sobel( grayImg, grad_x, ddepth, 1, 0, 3, scale, delta, BORDER_DEFAULT );
-//        convertScaleAbs( grad_x, abs_grad_x );
-//        /// Gradient Y
-//        Sobel( grayImg, grad_y, ddepth, 0, 1, 3, scale, delta, BORDER_DEFAULT );
-//        convertScaleAbs( grad_y, abs_grad_y );
-//        addWeighted( abs_grad_x, 0.5, abs_grad_y, 0.5, 0, edgeImg );
-*/
         Ptr<nkhGraphSegmentationImpl> segPtr = createGraphSegmentation(sigma_egbis, k_egbis, min_size_egbis);
-//        measure<chrono::milliseconds>(nkhSeg, segPtr, edgeSmoothLow, edgeImg, egbisSeg);
-//        measure<chrono::milliseconds>(egbisVisualise, egbisSeg, egbisImage);
-        cv::Mat ensembleFrame, hlsSmooth, hsvSmooth, hlsChans[3], hsvChans[3], labSmooth, costMatrixes[3], costMatrix;
+        cv::Mat costMatrix;
+        //Ensemble  Frame
         /*
+        cv::Mat ensembleFrame, hlsSmooth, hsvSmooth, hlsChans[3], hsvChans[3], labSmooth, costMatrixes[3], ;
 //        cv::cvtColor(edgeSmoothLow, hlsSmooth, cv::COLOR_BGR2HLS);
 //        cv::cvtColor(edgeSmoothLow, hsvSmooth, cv::COLOR_BGR2HSV);
 //        cv::cvtColor(edgeSmoothLow, labSmooth, cv::COLOR_BGR2Lab);
@@ -433,11 +245,11 @@ void nkhMain(path inVid, path inFile, path outDir)
         nkhSeg(segPtr, edgeSmooth, costMatrix, egbisSeg);
         t1 = get_timestamp();
         secs = (t1 - t0) / 1000000.0L;
-//        cout << "B1: " << secs << endl;
         time_b += secs;
 
         int nb_segs = egbisVisualise(egbisSeg, egbisImage);
         seg_sum += nb_segs;
+        //Write Egbis
         /*
         cv::Mat tmpEgbMask = cv::Mat::zeros(egbisImage.rows, egbisImage.cols, fin.type());
          cv::Mat toWrite = frameResized.clone(), edgTowrite(edgeSmooth);
@@ -479,6 +291,7 @@ void nkhMain(path inVid, path inFile, path outDir)
 
         }
         */
+        //CUDA
 /*
 //         cv::cuda::Stream stream[3];
 //         for(int i=0; i<3; i++){
@@ -489,10 +302,10 @@ void nkhMain(path inVid, path inFile, path outDir)
 //             }
 //         }
 */
-/*
+///*
         char controlChar = maybeImshow("Orig", masked, 30) ;
 
-        controlChar = maybeImshow("Saliency", frameResized) ;
+        controlChar = maybeImshow("Saliency", egbisImage) ;
         if (controlChar == 'q')
         {
             break;
@@ -505,32 +318,27 @@ void nkhMain(path inVid, path inFile, path outDir)
         {
             cap.set(CV_CAP_PROP_POS_AVI_RATIO , 0);
         }
-*/
+//*/
+//        imwrite(outDir.string() + "/" + "frame-" + to_string(frameCount) +".png", toWrite);
 
         //Eval
-//        evaluateMasked(tmpEgbMask, groundTruth, frameCount, evalColmask);
-//        evaluateNonMasked(tmpEgbMask, groundTruth, frameCount, evalNegColmask);
+        /*
+        evaluateMasked(tmpEgbMask, groundTruth, frameCount, evalColmask);
+        evaluateNonMasked(tmpEgbMask, groundTruth, frameCount, evalNegColmask);
+        */
 
-//                     maybeImshow("cont", toWrite, 30) ;
-
-//        imwrite(outDir.string() + "/" + "frame-" + to_string(frameCount) +".png", toWrite);
         fpsCalcEnd();
 //        cout<< timerFPS  << "fps" << endl;
         if(timerFPS != INFINITY)
             fps_sum += timerFPS;
         frameCount++;
-//        prevFrame_gray2 = frameResized_gray2.clone();
     }
 //    calcMeanVar(evalColmask, "egbis", false);
 //    calcMeanVar(evalNegColmask, "egbis-neg");
 
-
-//    cout << "Segs " << (double)seg_sum/frameCount << endl;
-//    cout << "MSERs " << (double)mser_sum/frameCount << endl;
     cout << "FPS " << (double)fps_sum/frameCount << endl;
-//    cout << "W " << (double)time_w/frameCount << endl;
-//    cout << "G " << (double)time_g/frameCount << endl;
     cout << "B " << (double)time_b/frameCount << endl;
+
     //Handle Memory
     cap.release();
     currentFrame.release();
