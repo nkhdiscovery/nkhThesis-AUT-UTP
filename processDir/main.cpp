@@ -539,7 +539,7 @@ void nkhMain(path inVid, path inFile, path outDir)
         evaluateMasked(tmpEgbMask, groundTruth, frameCount, evalColmask);
         evaluateNonMasked(tmpEgbMask, groundTruth, frameCount, evalNegColmask);
 
-                     maybeImshow("cont", toWrite, 30) ;
+//                     maybeImshow("cont", toWrite, 30) ;
 
         imwrite(outDir.string() + "/" + "frame-" + to_string(frameCount) +".png", toWrite);
         fpsCalcEnd();
